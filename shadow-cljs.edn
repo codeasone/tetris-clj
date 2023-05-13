@@ -1,0 +1,9 @@
+{:deps {:aliases [:dev]}
+ :dev-http {3000 "resources/public"}
+ :builds {:app
+          {:target :browser
+           :output-dir "resources/public/js"
+           :asset-path "/js"
+           :modules {:main {:entries [tetris.client]
+                            :init-fn tetris.client/init}}
+           :devtools {:preloads [devtools.preload]}}}}

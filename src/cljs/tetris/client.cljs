@@ -4,9 +4,7 @@
             [reagent.dom.client :as rdom]
             [tetris.model :as model]))
 
-(defonce game-state (r/atom {:game-grid model/empty-game-grid
-                             :current-tetrimino (model/random-tetrimino)
-                             :next-tetrimino (model/random-tetrimino)}))
+(defonce game-state (r/atom (model/initial-game-state)))
 
 (defn classes
   [& strings]
@@ -27,12 +25,10 @@
 
 (defn ^:dev/always tetris []
   (fn [_]
-    (let [{:keys [game-grid current-tetrimino]} @game-state
-          play-position (r/atom [0
-                                 (rand-int (- model/grid-width (model/width-tetrimino current-tetrimino)))])]
+    (let [{:keys [game-grid current-tetrimino player-row-column]} @game-state]
       (into
        [:div {:class "flex flex-col"}]
-       (for [row (model/compose-grid game-grid current-tetrimino @play-position)]
+       (for [row (model/compose-grid game-grid current-tetrimino player-row-column)]
          (into
           [:div {:class "flex"}]
           (for [cell-value row]

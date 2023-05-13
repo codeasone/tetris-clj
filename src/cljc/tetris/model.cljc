@@ -96,14 +96,34 @@
         possible-orientations (count (get tetrimino-shapes type))]
     (nth (get tetrimino-shapes type) (rand-int possible-orientations))))
 
-(comment
-  (random-tetrimino)
-  ;;
-  )
-
-(defn width-tetrimino
+(defn width-of-tetrimino
   [tetrimino]
   (count (first tetrimino)))
+
+(defn initial-game-state
+  []
+  (let [initial-tetrimino (random-tetrimino)
+        initial-position [0 (rand-int (- grid-width (width-of-tetrimino initial-tetrimino)))]]
+    {:game-grid empty-game-grid
+     :current-tetrimino initial-tetrimino
+     :next-tetrimino (random-tetrimino)
+     :player-row-column initial-position}))
+
+(s/def ::tetrimino-cell-value (s/int-in 0 8))
+(s/def ::grid-of-tetrimino-cells (s/coll-of (s/coll-of ::tetrimino-cell-value)))
+(s/def ::game-grid ::grid-of-tetrimino-cells)
+(s/def ::current-tetrimino ::grid-of-tetrimino-cells)
+(s/def ::next-tetrimino ::grid-of-tetrimino-cells)
+(s/def ::player-row-column (s/cat :row (s/int-in 0 (inc grid-height)) :col (s/int-in 0 (inc grid-width))))
+(s/def ::game-state (s/keys :req-un [::game-grid
+                                     ::current-tetrimino
+                                     ::next-tetrimino
+                                     ::player-row-column]))
+
+(comment
+  (s/valid? ::game-state (initial-game-state))
+  ;;
+  )
 
 (defn compose-grid
   "This compose helper is not responsible game state for any validation"

@@ -4,6 +4,6 @@
           {:target :browser
            :output-dir "resources/public/js"
            :asset-path "/js"
-           :modules {:main {:entries [tetris.client]
-                            :init-fn tetris.client/init}}
+           :modules {:main {:entries [tetris.app]
+                            :init-fn tetris.app/init}}
            :devtools {:preloads [devtools.preload]}}}}

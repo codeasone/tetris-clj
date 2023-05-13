@@ -1,4 +1,4 @@
-(ns tetris.client
+(ns tetris.app
   (:require [clojure.string :as str]
             [reagent.core :as r]
             [reagent.dom.client :as rdom]

@@ -36,14 +36,13 @@
       7 [:div {:class (classes common-cell-classes "bg-cyan-500")}])))
 
 (defn tetris []
-  (let [{:keys [game-grid current-tetrimino player-row-column]} @game-state]
-    (into
-     [:div {:class "flex flex-col"}]
-     (for [row (model/compose-grid game-grid current-tetrimino player-row-column)]
-       (into
-        [:div {:class "flex"}]
-        (for [cell-value row]
-          [grid-cell cell-value]))))))
+  (into
+   [:div {:class "flex flex-col"}]
+   (for [row (model/compose-grid @game-state)]
+     (into
+      [:div {:class "flex"}]
+      (for [cell-value row]
+        [grid-cell cell-value])))))
 
 (defonce root (rdom/create-root (js/document.getElementById "root")))
 

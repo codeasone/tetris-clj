@@ -186,9 +186,9 @@
 
 (defn compose-grid
   "This compose helper is not responsible game state for any validation"
-  [current-grid current-tetrimino play-position]
-  (let [[row col] play-position
-        mutable-game-grid* (atom current-grid)]
+  [{:keys [game-grid current-tetrimino player-row-column]}]
+  (let [[row col] player-row-column
+        mutable-game-grid* (atom game-grid)]
     ;; Code is easier to understand when implemented using local mutable atom
     (doseq [{:keys [row-idx tetrimino-row]}
             (map-indexed (fn [row-idx tetrimino-row]

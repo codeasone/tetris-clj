@@ -6,26 +6,26 @@
 (def grid-height 20)
 
 (def empty-game-grid
-  [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]])
+  [[0 0 0 0 0 0 0 0 0 0]
+   [0 0 0 0 0 0 0 0 0 0]
+   [0 0 0 0 0 0 0 0 0 0]
+   [0 0 0 0 0 0 0 0 0 0]
+   [0 0 0 0 0 0 0 0 0 0]
+   [0 0 0 0 0 0 0 0 0 0]
+   [0 0 0 0 0 0 0 0 0 0]
+   [0 0 0 0 0 0 0 0 0 0]
+   [0 0 0 0 0 0 0 0 0 0]
+   [0 0 0 0 0 0 0 0 0 0]
+   [0 0 0 0 0 0 0 0 0 0]
+   [0 0 0 0 0 0 0 0 0 0]
+   [0 0 0 0 0 0 0 0 0 0]
+   [0 0 0 0 0 0 0 0 0 0]
+   [0 0 0 0 0 0 0 0 0 0]
+   [0 0 0 0 0 0 0 0 0 0]
+   [0 0 0 0 0 0 0 0 0 0]
+   [0 0 0 0 0 0 0 0 0 0]
+   [0 0 0 0 0 0 0 0 0 0]
+   [0 0 0 0 0 0 0 0 0 0]])
 
 (def tetrimino-types [:tetrimino/I
                       :tetrimino/O
@@ -129,71 +129,115 @@
     {:game-grid empty-game-grid
      :current-tetrimino initial-tetrimino
      :next-tetrimino (random-tetrimino)
-     :player-row-column initial-position}))
+     :player-row-col initial-position}))
 
 (s/def ::tetrimino-cell-value (s/int-in 0 8))
 (s/def ::grid-of-tetrimino-cells (s/coll-of (s/coll-of ::tetrimino-cell-value)))
 (s/def ::game-grid ::grid-of-tetrimino-cells)
 (s/def ::current-tetrimino ::grid-of-tetrimino-cells)
 (s/def ::next-tetrimino ::grid-of-tetrimino-cells)
-(s/def ::player-row-column (s/cat :row (s/int-in 0 (inc grid-height)) :col (s/int-in 0 (inc grid-width))))
+(s/def ::player-row-col (s/cat :row (s/int-in 0 (inc grid-height)) :col (s/int-in 0 (inc grid-width))))
 (s/def ::game-state (s/keys :req-un [::game-grid
                                      ::current-tetrimino
-                                     ::next-tetrimino
-                                     ::player-row-column]))
+                                     ::player-row-col]
+                            :opt-un [::next-tetrimino]))
 
 (comment
   (s/valid? ::game-state (initial-game-state))
   ;;
   )
 
-(>defn handle-left [{:keys [_game-grid
+(defn- handle-left [{:keys [_game-grid
                             _current-tetrimino
                             _next-tetrimino
-                            player-row-column] :as game-state-before}]
-  [::game-state => ::game-state]
-  (let [[_ col] player-row-column]
+                            player-row-col] :as game-state-before}]
+  (let [[_ col] player-row-col]
     (if (pos-int? col)
-      (assoc-in game-state-before [:player-row-column 1] (dec col))
+      (assoc-in game-state-before [:player-row-col 1] (dec col))
       game-state-before)))
 
-(>defn handle-right [{:keys [_game-grid
+(defn- handle-right [{:keys [_game-grid
                              current-tetrimino
                              _next-tetrimino
-                             player-row-column] :as game-state-before}]
-  [::game-state => ::game-state]
-  (let [[_ col] player-row-column]
+                             player-row-col] :as game-state-before}]
+  (let [[_ col] player-row-col]
     (if (< (+ col (width-of-tetrimino current-tetrimino)) grid-width)
-      (assoc-in game-state-before [:player-row-column 1] (inc col))
+      (assoc-in game-state-before [:player-row-col 1] (inc col))
       game-state-before)))
 
-(>defn handle-up [{:keys [_game-grid
+(defn- handle-up [{:keys [_game-grid
                           current-tetrimino
                           _next-tetrimino
-                          player-row-column] :as game-state-before}]
-  [::game-state => ::game-state]
-  (let [[row col] player-row-column
+                          player-row-col] :as game-state-before}]
+  (let [[row col] player-row-col
         rotated (rotate current-tetrimino)
         rotated-width (width-of-tetrimino rotated)]
     (cond-> (assoc game-state-before :current-tetrimino rotated)
       (> (+ col rotated-width) grid-width)
-      (assoc :player-row-column [row (- grid-width rotated-width)]))))
+      (assoc :player-row-col [row (- grid-width rotated-width)]))))
 
-(>defn handle-down [{:keys [_game-grid
+(defn- handle-down [{:keys [_game-grid
                             current-tetrimino
                             _next-tetrimino
-                            player-row-column] :as game-state-before}]
-  [::game-state => ::game-state]
-  (let [[row _] player-row-column]
+                            player-row-col] :as game-state-before}]
+  (let [[row _] player-row-col]
     (if (< (+ row (height-of-tetrimino current-tetrimino)) grid-height)
-      (assoc-in game-state-before [:player-row-column 0] (inc row))
+      (assoc-in game-state-before [:player-row-col 0] (inc row))
       game-state-before)))
 
-(>defn compose-grid
+(s/def ::game-event #{:key-event/left
+                      :key-event/right
+                      :key-event/up
+                      :key-event/down})
+(s/def ::game-events (s/coll-of ::game-event))
+
+(>defn handle-events [game-state-before events]
+  [::game-state ::game-events => ::game-state]
+  (reduce (fn [acc ev]
+            (case ev
+              :key-event/left
+              (handle-left acc)
+              :key-event/right
+              (handle-right acc)
+              :key-event/up
+              (handle-up acc)
+              :key-event/down
+              (handle-down acc)))
+          game-state-before events))
+
+(comment
+  (handle-events {:game-grid [[1 1 1 1 0 0 0 0 0 0]
+                              [0 0 0 0 0 0 0 0 0 0]
+                              [0 0 0 0 0 0 0 0 0 0]
+                              [0 0 0 0 0 0 0 0 0 0]
+                              [0 0 0 0 0 0 0 0 0 0]
+                              [0 0 0 0 0 0 0 0 0 0]
+                              [0 0 0 0 0 0 0 0 0 0]
+                              [0 0 0 0 0 0 0 0 0 0]
+                              [0 0 0 0 0 0 0 0 0 0]
+                              [0 0 0 0 0 0 0 0 0 0]
+                              [0 0 0 0 0 0 0 0 0 0]
+                              [0 0 0 0 0 0 0 0 0 0]
+                              [0 0 0 0 0 0 0 0 0 0]
+                              [0 0 0 0 0 0 0 0 0 0]
+                              [0 0 0 0 0 0 0 0 0 0]
+                              [0 0 0 0 0 0 0 0 0 0]
+                              [0 0 0 0 0 0 0 0 0 0]
+                              [0 0 0 0 0 0 0 0 0 0]
+                              [0 0 0 0 0 0 0 0 0 0]
+                              [0 0 0 0 0 0 0 0 0 0]]
+                  :current-tetrimino [[1 1 1 1]]
+                  :next-tetrimino (random-tetrimino)
+                  :player-row-col [0 0]}
+                 [:key-event/right])
+  ;;
+  )
+
+(>defn game-state->visible-grid
   "This compose helper is not responsible game state for any validation"
-  [{:keys [game-grid current-tetrimino player-row-column]}]
+  [{:keys [game-grid current-tetrimino player-row-col]}]
   [::game-state => ::game-grid]
-  (let [[row col] player-row-column
+  (let [[row col] player-row-col
         mutable-game-grid* (atom game-grid)]
     ;; Code is easier to understand when implemented using local mutable atom
     (doseq [{:keys [row-idx tetrimino-row]}

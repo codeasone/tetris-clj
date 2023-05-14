@@ -12,10 +12,10 @@
       13 (js/alert "ENTER!")
       27 (js/alert "ESCAPE!")
       32 (js/alert "SPACE!")
-      37 (reset! game-state (model/handle-left @game-state))
-      38 (reset! game-state (model/handle-up @game-state))
-      39 (reset! game-state (model/handle-right @game-state))
-      40 (reset! game-state (model/handle-down @game-state))
+      37 (reset! game-state (model/handle-events @game-state [:key-event/left]))
+      38 (reset! game-state (model/handle-events @game-state [:key-event/up]))
+      39 (reset! game-state (model/handle-events @game-state [:key-event/right]))
+      40 (reset! game-state (model/handle-events @game-state [:key-event/down]))
       nil)))
 
 (defn classes
@@ -38,7 +38,7 @@
 (defn tetris []
   (into
    [:div {:class "flex flex-col"}]
-   (for [row (model/compose-grid @game-state)]
+   (for [row (model/game-state->visible-grid @game-state)]
      (into
       [:div {:class "flex"}]
       (for [cell-value row]

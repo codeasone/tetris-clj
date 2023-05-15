@@ -126,6 +126,7 @@
 (defn initial-game-state
   []
   (let [initial-tetrimino (random-tetrimino)
+        ;; initial-tetrimino [[1 1 1 1]]
         initial-position [0 (rand-int (- grid-width (width-of-tetrimino initial-tetrimino)))]]
     {:game-grid empty-game-grid
      :current-tetrimino initial-tetrimino
@@ -137,7 +138,12 @@
 (s/def ::game-grid ::grid-of-tetrimino-cells)
 (s/def ::current-tetrimino ::grid-of-tetrimino-cells)
 (s/def ::next-tetrimino ::grid-of-tetrimino-cells)
-(s/def ::position-in-game-grid (s/cat :row (s/int-in 0 (inc grid-height)) :col (s/int-in 0 (inc grid-width))))
+(s/def ::column-extents (s/and vector? #(= 2 (count %))
+                               (s/every integer?)
+                               #(<= 0 (first %) grid-width)))
+(s/def ::position-in-game-grid (s/and vector? #(= 2 (count %))
+                                      #(<= 0 (first %) grid-height)
+                                      #(<= 0 (second %) grid-width)))
 (s/def ::player-row-col ::position-in-game-grid)
 (s/def ::game-state (s/keys :req-un [::game-grid
                                      ::current-tetrimino
@@ -151,7 +157,7 @@
 
 (>defn extents-of-current-tetrimino
   [current-tetrimino player-row-col]
-  [::current-tetrimino ::player-row-col => (s/coll-of ::position-in-game-grid)]
+  [::current-tetrimino ::position-in-game-grid => (s/coll-of ::column-extents)]
   (let [[row col] player-row-col]
     (->> current-tetrimino
          m/transpose
@@ -172,8 +178,6 @@
                   (apply min %)
                   nil)))))
 
-(interleave [1 2 3] [1 1 1])
-
 (defn tetrimino-collides-with-peaks?
   [{:keys [game-grid
            current-tetrimino
@@ -187,6 +191,13 @@
          (partition 2)
          (some (fn [[tetrimino-extent grid-peak]] (when grid-peak (>= tetrimino-extent grid-peak))))
          boolean)))
+
+(defn tetrimino-crosses-baseline?
+  [{:keys [current-tetrimino
+           player-row-col]}]
+  (let [extents (extents-of-current-tetrimino current-tetrimino player-row-col)]
+    (boolean (some (fn [[_ row-extent]]
+                     (>= row-extent grid-height)) extents))))
 
 (defn- handle-left [{:keys [_game-grid
                             _current-tetrimino
@@ -224,14 +235,12 @@
                          ;; Boundary handling on rhs of game-grid
                          (> (+ col rotated-width) grid-width)
                          (assoc :player-row-col [row (- grid-width rotated-width)]))]
-    (cond-> new-game-state
-      ;; When rotated piece collides with peaks in game-grid
-      (tetrimino-collides-with-peaks? new-game-state)
-      ;; Reduce row position until collision is avoided
-      (#(loop [new-game-state %]
-          (if (tetrimino-collides-with-peaks? new-game-state)
-            (recur (assoc-in new-game-state [:player-row-col 0] (dec row)))
-            new-game-state))))))
+    (loop [{:keys [player-row-col] :as adjusted-game-state} new-game-state]
+      (if (or (tetrimino-crosses-baseline? adjusted-game-state)
+              (tetrimino-collides-with-peaks? adjusted-game-state))
+        (let [[row col] player-row-col]
+          (recur (assoc adjusted-game-state :player-row-col [(dec row) col])))
+        adjusted-game-state))))
 
 (s/def ::game-event #{::move-left
                       ::move-right
@@ -281,10 +290,12 @@
   ;;
   )
 
-(>defn game-state->visible-grid
+(>defn compose-current-tetrimino-into-game-grid
   "This compose helper is not responsible for any validation"
   [{:keys [game-grid current-tetrimino player-row-col]}]
   [::game-state => ::game-grid]
+  (tap> {:current-tetrimino current-tetrimino
+         :player-row-col player-row-col})
   (let [[row col] player-row-col
         mutable-game-grid* (atom game-grid)]
     ;; Code is easier to understand when implemented using local mutable atom
@@ -300,5 +311,8 @@
         (when (pos-int? tetrimino-cell-value)
           (swap! mutable-game-grid*
                  (fn [current-grid]
-                   (update-in current-grid [(+ row row-idx) (+ col col-idx)] (fn [_] tetrimino-cell-value)))))))
+                   (if (and (<= 0 (+ row row-idx) (dec grid-height))
+                            (<= 0 (+ col col-idx) (dec grid-width)))
+                     (update-in current-grid [(+ row row-idx) (+ col col-idx)] (fn [_] tetrimino-cell-value))
+                     current-grid))))))
     @mutable-game-grid*))

@@ -1,7 +1,7 @@
 (ns tetris.model-test
   (:require #?(:clj [clojure.test :refer :all]
                :cljs [cljs.test :refer :all :include-macros true])
-            [tetris.model :as sut]))
+            [tetris.model :as model]))
 
 (defn tetrimino-to-coords [tetrimino]
   (->> tetrimino
@@ -35,7 +35,7 @@
    (fn [acc type tetriminos]
      (assoc acc type (mapv tetrimino-to-coords tetriminos)))
    {}
-   sut/tetrimino-shapes))
+   model/tetrimino-shapes))
 
 (defn- game-state-from-before-grid
   [test-grid]
@@ -45,7 +45,7 @@
         (->> test-grid
              flatten
              (keep-indexed (fn [idx elem] (when (= elem *) idx)))
-             (mapv (fn [idx] [(unchecked-divide-int idx sut/grid-width) (rem idx sut/grid-width)])))
+             (mapv (fn [idx] [(unchecked-divide-int idx model/grid-width) (rem idx model/grid-width)])))
         row-offset (apply min (mapv first current-tetrimino-coords))
         col-offset (apply min (mapv second current-tetrimino-coords))
         player-row-col [row-offset col-offset]
@@ -59,7 +59,7 @@
                                                    (get tetrimino-shape-normalised-coords
                                                         current-tetrimino-type)))]
     {:game-grid game-grid
-     :current-tetrimino (get-in sut/tetrimino-shapes [current-tetrimino-type current-tetrimino-idx])
+     :current-tetrimino (get-in model/tetrimino-shapes [current-tetrimino-type current-tetrimino-idx])
      :player-row-col player-row-col}))
 
 (deftest game-state-from-before-grid-test
@@ -340,9 +340,9 @@
         after-grid (mapv #(drop-while (fn [token] (not= token '->)) %) before->after)
         after-grid (mapv #(into [] (rest %)) after-grid)]
     `(is (= ~after-grid
-            (sut/game-state->visible-grid (sut/handle-events (game-state-from-before-grid
-                                                              ~before-grid)
-                                                             ~events))))))
+            (model/compose-current-tetrimino-into-game-grid (model/handle-events (game-state-from-before-grid
+                                                                                  ~before-grid)
+                                                                                 ~events))))))
 
 (comment
   (macroexpand '(check-scenario
@@ -499,10 +499,6 @@
         [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]
         [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]
         [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]
-        [0 0 0 0 0 0 0 0 0 * -> 0 0 0 0 0 0 1 1 1 1]
-        [0 0 0 0 0 0 0 0 0 * -> 0 0 0 0 0 0 0 0 0 0]
-        [0 0 0 0 0 0 0 0 0 * -> 0 0 0 0 0 0 0 0 0 0]
-        [0 0 0 0 0 0 0 0 0 * -> 0 0 0 0 0 0 0 0 0 0]
         [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]
         [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]
         [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]
@@ -514,7 +510,11 @@
         [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]
         [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]
         [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]
-        [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]]
+        [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]
+        [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]
+        [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 3 0 0 0 0]
+        [0 0 0 0 * * * 0 0 0 -> 0 0 0 0 3 3 0 0 0 0]
+        [0 0 0 0 0 * 0 0 0 0 -> 0 0 0 0 0 3 0 0 0 0]]
        [::model/rotate-current]))
 
     (testing "when adjacent to some peaks"
@@ -544,84 +544,92 @@
 (deftest game-grid-peaks-test
   (testing "empty grid"
     (is (= [nil nil nil nil nil nil nil nil nil nil]
-           (sut/peaks [[0 0 0 0 0 0 0 0 0 0]
-                       [0 0 0 0 0 0 0 0 0 0]
-                       [0 0 0 0 0 0 0 0 0 0]
-                       [0 0 0 0 0 0 0 0 0 0]
-                       [0 0 0 0 0 0 0 0 0 0]
-                       [0 0 0 0 0 0 0 0 0 0]
-                       [0 0 0 0 0 0 0 0 0 0]
-                       [0 0 0 0 0 0 0 0 0 0]
-                       [0 0 0 0 0 0 0 0 0 0]
-                       [0 0 0 0 0 0 0 0 0 0]
-                       [0 0 0 0 0 0 0 0 0 0]
-                       [0 0 0 0 0 0 0 0 0 0]
-                       [0 0 0 0 0 0 0 0 0 0]
-                       [0 0 0 0 0 0 0 0 0 0]
-                       [0 0 0 0 0 0 0 0 0 0]
-                       [0 0 0 0 0 0 0 0 0 0]
-                       [0 0 0 0 0 0 0 0 0 0]
-                       [0 0 0 0 0 0 0 0 0 0]
-                       [0 0 0 0 0 0 0 0 0 0]
-                       [0 0 0 0 0 0 0 0 0 0]]))))
+           (model/peaks [[0 0 0 0 0 0 0 0 0 0]
+                         [0 0 0 0 0 0 0 0 0 0]
+                         [0 0 0 0 0 0 0 0 0 0]
+                         [0 0 0 0 0 0 0 0 0 0]
+                         [0 0 0 0 0 0 0 0 0 0]
+                         [0 0 0 0 0 0 0 0 0 0]
+                         [0 0 0 0 0 0 0 0 0 0]
+                         [0 0 0 0 0 0 0 0 0 0]
+                         [0 0 0 0 0 0 0 0 0 0]
+                         [0 0 0 0 0 0 0 0 0 0]
+                         [0 0 0 0 0 0 0 0 0 0]
+                         [0 0 0 0 0 0 0 0 0 0]
+                         [0 0 0 0 0 0 0 0 0 0]
+                         [0 0 0 0 0 0 0 0 0 0]
+                         [0 0 0 0 0 0 0 0 0 0]
+                         [0 0 0 0 0 0 0 0 0 0]
+                         [0 0 0 0 0 0 0 0 0 0]
+                         [0 0 0 0 0 0 0 0 0 0]
+                         [0 0 0 0 0 0 0 0 0 0]
+                         [0 0 0 0 0 0 0 0 0 0]]))))
 
   (testing "full grid"
     (is (= [0 0 0 0 0 0 0 0 0 0]
-           (sut/peaks [[2 2 2 2 2 2 2 2 2 2]
-                       [2 2 2 2 2 2 2 2 2 2]
-                       [2 2 2 2 2 2 2 2 2 2]
-                       [2 2 2 2 2 2 2 2 2 2]
-                       [2 2 2 2 2 2 2 2 2 2]
-                       [2 2 2 2 2 2 2 2 2 2]
-                       [2 2 2 2 2 2 2 2 2 2]
-                       [2 2 2 2 2 2 2 2 2 2]
-                       [2 2 2 2 2 2 2 2 2 2]
-                       [2 2 2 2 2 2 2 2 2 2]
-                       [2 2 2 2 2 2 2 2 2 2]
-                       [2 2 2 2 2 2 2 2 2 2]
-                       [2 2 2 2 2 2 2 2 2 2]
-                       [2 2 2 2 2 2 2 2 2 2]
-                       [2 2 2 2 2 2 2 2 2 2]
-                       [2 2 2 2 2 2 2 2 2 2]
-                       [2 2 2 2 2 2 2 2 2 2]
-                       [2 2 2 2 2 2 2 2 2 2]
-                       [2 2 2 2 2 2 2 2 2 2]
-                       [2 2 2 2 2 2 2 2 2 2]]))))
+           (model/peaks [[2 2 2 2 2 2 2 2 2 2]
+                         [2 2 2 2 2 2 2 2 2 2]
+                         [2 2 2 2 2 2 2 2 2 2]
+                         [2 2 2 2 2 2 2 2 2 2]
+                         [2 2 2 2 2 2 2 2 2 2]
+                         [2 2 2 2 2 2 2 2 2 2]
+                         [2 2 2 2 2 2 2 2 2 2]
+                         [2 2 2 2 2 2 2 2 2 2]
+                         [2 2 2 2 2 2 2 2 2 2]
+                         [2 2 2 2 2 2 2 2 2 2]
+                         [2 2 2 2 2 2 2 2 2 2]
+                         [2 2 2 2 2 2 2 2 2 2]
+                         [2 2 2 2 2 2 2 2 2 2]
+                         [2 2 2 2 2 2 2 2 2 2]
+                         [2 2 2 2 2 2 2 2 2 2]
+                         [2 2 2 2 2 2 2 2 2 2]
+                         [2 2 2 2 2 2 2 2 2 2]
+                         [2 2 2 2 2 2 2 2 2 2]
+                         [2 2 2 2 2 2 2 2 2 2]
+                         [2 2 2 2 2 2 2 2 2 2]]))))
 
   (testing "partial grid"
     (is (= [nil 15 13 12 10 10 10 10 11 8]
-           (sut/peaks [[0 0 0 0 0 0 0 0 0 0]
-                       [0 0 0 0 0 0 0 0 0 0]
-                       [0 0 0 0 0 0 0 0 0 0]
-                       [0 0 0 0 0 0 0 0 0 0]
-                       [0 0 0 0 0 0 0 0 0 0]
-                       [0 0 0 0 0 0 0 0 0 0]
-                       [0 0 0 0 0 0 0 0 0 0]
-                       [0 0 0 0 0 0 0 0 0 0]
-                       [0 0 0 0 0 0 0 0 0 1]
-                       [0 0 0 0 0 0 0 0 0 1]
-                       [0 0 0 0 4 4 4 3 0 1]
-                       [0 0 0 0 4 0 3 3 3 1]
-                       [0 0 0 2 2 2 2 2 2 2]
-                       [0 0 5 2 2 2 2 2 2 2]
-                       [0 0 5 2 2 2 2 2 2 2]
-                       [0 5 5 2 2 2 2 2 2 2]
-                       [0 2 2 2 2 2 2 2 2 2]
-                       [0 2 2 2 2 2 2 2 2 2]
-                       [0 2 2 2 2 2 2 2 2 2]
-                       [0 2 2 2 2 2 2 2 2 2]])))))
+           (model/peaks [[0 0 0 0 0 0 0 0 0 0]
+                         [0 0 0 0 0 0 0 0 0 0]
+                         [0 0 0 0 0 0 0 0 0 0]
+                         [0 0 0 0 0 0 0 0 0 0]
+                         [0 0 0 0 0 0 0 0 0 0]
+                         [0 0 0 0 0 0 0 0 0 0]
+                         [0 0 0 0 0 0 0 0 0 0]
+                         [0 0 0 0 0 0 0 0 0 0]
+                         [0 0 0 0 0 0 0 0 0 1]
+                         [0 0 0 0 0 0 0 0 0 1]
+                         [0 0 0 0 4 4 4 3 0 1]
+                         [0 0 0 0 4 0 3 3 3 1]
+                         [0 0 0 2 2 2 2 2 2 2]
+                         [0 0 5 2 2 2 2 2 2 2]
+                         [0 0 5 2 2 2 2 2 2 2]
+                         [0 5 5 2 2 2 2 2 2 2]
+                         [0 2 2 2 2 2 2 2 2 2]
+                         [0 2 2 2 2 2 2 2 2 2]
+                         [0 2 2 2 2 2 2 2 2 2]
+                         [0 2 2 2 2 2 2 2 2 2]])))))
 
 (deftest extents-of-current-tetrimino-test
   (is (= [[5 12] [6 11]]
-         (sut/extents-of-current-tetrimino [[3 0]
-                                            [3 3]
-                                            [3 0]]
-                                           [10 5]))))
+         (model/extents-of-current-tetrimino [[3 0]
+                                              [3 3]
+                                              [3 0]]
+                                             [10 5]))))
+
+(deftest tetrimino-crosses-baseline?-test
+  (is (false? (model/tetrimino-crosses-baseline? {:current-tetrimino [[2 2]
+                                                                      [2 2]]
+                                                  :player-row-col [0 0]})))
+  (is (true? (model/tetrimino-crosses-baseline? {:current-tetrimino [[2 2]
+                                                                     [2 2]]
+                                                 :player-row-col [19 0]}))))
 
 (deftest tetrimino-collides-with-peaks?-test
   (testing "empty grid"
     (testing "when strictly within it"
-      (is (false? (sut/tetrimino-collides-with-peaks?
+      (is (false? (model/tetrimino-collides-with-peaks?
                    {:game-grid [[0 0 0 0 0 0 0 0 0 0]
                                 [0 0 0 0 0 0 0 0 0 0]
                                 [0 0 0 0 0 0 0 0 0 0]
@@ -650,7 +658,7 @@
                     :player-row-col [4 5]}))))
 
     (testing "when adjacent to base of grid"
-      (is (false? (sut/tetrimino-collides-with-peaks?
+      (is (false? (model/tetrimino-collides-with-peaks?
                    {:game-grid [[0 0 0 0 0 0 0 0 0 0]
                                 [0 0 0 0 0 0 0 0 0 0]
                                 [0 0 0 0 0 0 0 0 0 0]
@@ -679,7 +687,7 @@
                     :player-row-col [17 5]}))))
 
     (testing "helper is not concerned about enforcing containment"
-      (is (false? (sut/tetrimino-collides-with-peaks?
+      (is (false? (model/tetrimino-collides-with-peaks?
                    {:game-grid [[0 0 0 0 0 0 0 0 0 0]
                                 [0 0 0 0 0 0 0 0 0 0]
                                 [0 0 0 0 0 0 0 0 0 0]
@@ -708,7 +716,7 @@
                     :player-row-col [19 0]})))))
 
   (testing "simple collision"
-    (is (true? (sut/tetrimino-collides-with-peaks?
+    (is (true? (model/tetrimino-collides-with-peaks?
                 {:game-grid [[0 0 0 0 0 0 0 0 0 0]
                              [0 0 0 0 0 0 0 0 0 0]
                              [0 0 0 0 0 0 0 0 0 0]
@@ -737,7 +745,7 @@
                  :player-row-col [9 4]}))))
 
   (testing "all possible adjacencies with peaks"
-    (is (every? #(false? (sut/tetrimino-collides-with-peaks?
+    (is (every? #(false? (model/tetrimino-collides-with-peaks?
                           {:game-grid [[0 0 0 0 0 0 0 0 0 0]
                                        [0 0 0 0 0 0 0 0 0 0]
                                        [0 0 0 0 0 0 0 0 0 0]
@@ -767,7 +775,7 @@
                 [[13 0] [11 1] [10 2] [8 3] [7 4] [7 5] [7 6] [7 7] [6 8]])))
 
   (testing "earliest collisions with peaks"
-    (is (every? #(true? (sut/tetrimino-collides-with-peaks?
+    (is (every? #(true? (model/tetrimino-collides-with-peaks?
                          {:game-grid [[0 0 0 0 0 0 0 0 0 0]
                                       [0 0 0 0 0 0 0 0 0 0]
                                       [0 0 0 0 0 0 0 0 0 0]

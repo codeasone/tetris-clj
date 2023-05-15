@@ -40,7 +40,7 @@
 (defn tetris []
   (into
    [:div {:class "flex flex-col"}]
-   (for [row (model/game-state->visible-grid @game-state)]
+   (for [row (model/compose-current-tetrimino-into-game-grid @game-state)]
      (into
       [:div {:class "flex"}]
       (for [cell-value row]

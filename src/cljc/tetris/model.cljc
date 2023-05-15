@@ -233,23 +233,23 @@
             (recur (assoc-in new-game-state [:player-row-col 0] (dec row)))
             new-game-state))))))
 
-(s/def ::game-event #{:key-event/left
-                      :key-event/right
-                      :key-event/up
-                      :key-event/down})
+(s/def ::game-event #{::move-left
+                      ::move-right
+                      ::rotate-current
+                      ::move-down})
 (s/def ::game-events (s/coll-of ::game-event))
 
 (>defn handle-events [game-state-before events]
   [::game-state ::game-events => ::game-state]
   (reduce (fn [acc ev]
             (case ev
-              :key-event/left
+              ::move-left
               (handle-left acc)
-              :key-event/right
+              ::move-right
               (handle-right acc)
-              :key-event/up
+              ::rotate-current
               (handle-rotate acc)
-              :key-event/down
+              ::move-down
               (handle-down acc)))
           game-state-before events))
 
@@ -277,7 +277,7 @@
                   :current-tetrimino [[1 1 1 1]]
                   :next-tetrimino (random-tetrimino)
                   :player-row-col [0 0]}
-                 [:key-event/right])
+                 [::move-right])
   ;;
   )
 

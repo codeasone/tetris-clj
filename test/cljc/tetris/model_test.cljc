@@ -391,8 +391,8 @@
       [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]
       [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]
       [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]]
-     [:key-event/right
-      :key-event/right]))
+     [::model/move-right
+      ::model/move-right]))
 
   (testing "boundary limits"
     (testing "at rhs"
@@ -417,7 +417,7 @@
         [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]
         [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]
         [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]]
-       [:key-event/right]))
+       [::model/move-right]))
 
     (testing "at lhs"
       (check-scenario
@@ -441,7 +441,7 @@
         [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]
         [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]
         [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]]
-       [:key-event/left]))
+       [::model/move-left]))
 
     (testing "at bottom"
       (check-scenario
@@ -465,7 +465,7 @@
         [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]
         [0 0 0 * * * 0 0 0 0 -> 0 0 0 3 3 3 0 0 0 0]
         [0 0 0 0 * 0 0 0 0 0 -> 0 0 0 0 3 0 0 0 0 0]]
-       [:key-event/down]))))
+       [::model/move-down]))))
 
 (deftest rotating-current-tetrmino-test
   (testing "when rotation requires horizontal repositioning"
@@ -490,7 +490,7 @@
       [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]
       [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]
       [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]]
-     [:key-event/up]))
+     [::model/rotate-current]))
 
   (testing "when rotation requires vertical repositioning"
     (testing "in empty grid"
@@ -515,7 +515,7 @@
         [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]
         [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]
         [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]]
-       [:key-event/up]))
+       [::model/rotate-current]))
 
     (testing "when adjacent to some peaks"
       (check-scenario
@@ -539,7 +539,7 @@
         [0 0 5 2 2 2 2 2 2 2 -> 0 0 5 2 2 2 2 2 2 2]
         [0 0 5 2 2 2 2 2 2 2 -> 0 0 5 2 2 2 2 2 2 2]
         [0 5 5 2 2 2 2 2 2 2 -> 0 5 5 2 2 2 2 2 2 2]]
-       [:key-event/up]))))
+       [::model/rotate-current]))))
 
 (deftest game-grid-peaks-test
   (testing "empty grid"

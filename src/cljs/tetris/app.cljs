@@ -2,21 +2,23 @@
   (:require [clojure.string :as str]
             [reagent.core :as r]
             [reagent.dom.client :as rdom]
+            [tetris.keys :as keys]
             [tetris.model :as model]))
 
 (defonce game-state (r/atom (model/initial-game-state)))
 
 (def handle-key-event
   (fn [event]
-    (case (.-keyCode event)
-      13 (js/alert "ENTER!")
-      27 (js/alert "ESCAPE!")
-      32 (js/alert "SPACE!")
-      37 (reset! game-state (model/handle-events @game-state [:key-event/left]))
-      38 (reset! game-state (model/handle-events @game-state [:key-event/up]))
-      39 (reset! game-state (model/handle-events @game-state [:key-event/right]))
-      40 (reset! game-state (model/handle-events @game-state [:key-event/down]))
-      nil)))
+    (let [key-code (.-keyCode event)]
+      (cond
+        (= key-code keys/enter) (js/alert "ENTER!")
+        (= key-code keys/escape) (js/alert "ESCAPE!")
+        (= key-code keys/space) (js/alert "SPACE!")
+        (= key-code keys/left) (reset! game-state (model/handle-events @game-state [::model/move-left]))
+        (= key-code keys/up) (reset! game-state (model/handle-events @game-state [::model/rotate-current]))
+        (= key-code keys/right) (reset! game-state (model/handle-events @game-state [::model/move-right]))
+        (= key-code keys/down) (reset! game-state (model/handle-events @game-state [::model/move-down]))
+        :else nil))))
 
 (defn classes
   [& strings]

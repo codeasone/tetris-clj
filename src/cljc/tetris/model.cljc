@@ -137,7 +137,8 @@
 (s/def ::game-grid ::grid-of-tetrimino-cells)
 (s/def ::current-tetrimino ::grid-of-tetrimino-cells)
 (s/def ::next-tetrimino ::grid-of-tetrimino-cells)
-(s/def ::player-row-col (s/cat :row (s/int-in 0 (inc grid-height)) :col (s/int-in 0 (inc grid-width))))
+(s/def ::position-in-game-grid (s/cat :row (s/int-in 0 (inc grid-height)) :col (s/int-in 0 (inc grid-width))))
+(s/def ::player-row-col ::position-in-game-grid)
 (s/def ::game-state (s/keys :req-un [::game-grid
                                      ::current-tetrimino
                                      ::player-row-col]
@@ -147,6 +148,45 @@
   (s/valid? ::game-state (initial-game-state))
   ;;
   )
+
+(>defn extents-of-current-tetrimino
+  [current-tetrimino player-row-col]
+  [::current-tetrimino ::player-row-col => (s/coll-of ::position-in-game-grid)]
+  (let [[row col] player-row-col]
+    (->> current-tetrimino
+         m/transpose
+         (mapv #(keep-indexed (fn [idx val] (when (pos? val) idx)) %))
+         (mapv #(apply max %))
+         (map-indexed (fn [idx extent-within-tetrimino]
+                        [(+ col idx) (+ row extent-within-tetrimino)])))))
+
+(s/def ::peaks (s/coll-of (s/nilable (s/int-in 0 grid-height))))
+
+(>defn peaks
+  [game-grid]
+  [::game-grid => ::peaks]
+  (let [transposed (m/transpose game-grid)]
+    (->> transposed
+         (mapv #(keep-indexed (fn [idx val] (when (pos? val) idx)) %))
+         (mapv #(if (seq %)
+                  (apply min %)
+                  nil)))))
+
+(interleave [1 2 3] [1 1 1])
+
+(defn tetrimino-collides-with-peaks?
+  [{:keys [game-grid
+           current-tetrimino
+           player-row-col]}]
+  (let [[_ col] player-row-col
+        relevant-tetrimino-extents (->> (extents-of-current-tetrimino current-tetrimino player-row-col)
+                                        (mapv second))
+        relevant-game-grid-peaks (-> (peaks game-grid)
+                                     (subvec col (+ col (width-of-tetrimino current-tetrimino))))]
+    (->> (interleave relevant-tetrimino-extents relevant-game-grid-peaks)
+         (partition 2)
+         (some (fn [[tetrimino-extent grid-peak]] (when grid-peak (>= tetrimino-extent grid-peak))))
+         boolean)))
 
 (defn- handle-left [{:keys [_game-grid
                             _current-tetrimino
@@ -166,17 +206,6 @@
       (assoc-in game-state-before [:player-row-col 1] (inc col))
       game-state-before)))
 
-(defn- handle-up [{:keys [_game-grid
-                          current-tetrimino
-                          _next-tetrimino
-                          player-row-col] :as game-state-before}]
-  (let [[row col] player-row-col
-        rotated (rotate current-tetrimino)
-        rotated-width (width-of-tetrimino rotated)]
-    (cond-> (assoc game-state-before :current-tetrimino rotated)
-      (> (+ col rotated-width) grid-width)
-      (assoc :player-row-col [row (- grid-width rotated-width)]))))
-
 (defn- handle-down [{:keys [_game-grid
                             current-tetrimino
                             _next-tetrimino
@@ -185,6 +214,24 @@
     (if (< (+ row (height-of-tetrimino current-tetrimino)) grid-height)
       (assoc-in game-state-before [:player-row-col 0] (inc row))
       game-state-before)))
+
+(defn- handle-rotate [{:keys [current-tetrimino
+                              player-row-col] :as game-state-before}]
+  (let [[row col] player-row-col
+        rotated (rotate current-tetrimino)
+        rotated-width (width-of-tetrimino rotated)
+        new-game-state (cond-> (assoc game-state-before :current-tetrimino rotated)
+                         ;; Boundary handling on rhs of game-grid
+                         (> (+ col rotated-width) grid-width)
+                         (assoc :player-row-col [row (- grid-width rotated-width)]))]
+    (cond-> new-game-state
+      ;; When rotated piece collides with peaks in game-grid
+      (tetrimino-collides-with-peaks? new-game-state)
+      ;; Reduce row position until collision is avoided
+      (#(loop [new-game-state %]
+          (if (tetrimino-collides-with-peaks? new-game-state)
+            (recur (assoc-in new-game-state [:player-row-col 0] (dec row)))
+            new-game-state))))))
 
 (s/def ::game-event #{:key-event/left
                       :key-event/right
@@ -201,7 +248,7 @@
               :key-event/right
               (handle-right acc)
               :key-event/up
-              (handle-up acc)
+              (handle-rotate acc)
               :key-event/down
               (handle-down acc)))
           game-state-before events))
@@ -255,15 +302,3 @@
                  (fn [current-grid]
                    (update-in current-grid [(+ row row-idx) (+ col col-idx)] (fn [_] tetrimino-cell-value)))))))
     @mutable-game-grid*))
-
-(s/def ::peaks (s/coll-of (s/nilable (s/int-in 0 grid-height))))
-
-(>defn peaks
-  [game-grid]
-  [::game-grid => ::peaks]
-  (let [transposed (m/transpose game-grid)]
-    (->> transposed
-         (mapv #(keep-indexed (fn [idx val] (when (pos? val) idx)) %))
-         (mapv #(if (seq %)
-                  (apply min %)
-                  nil)))))

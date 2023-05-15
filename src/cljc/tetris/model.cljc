@@ -1,5 +1,6 @@
 (ns tetris.model
-  (:require [clojure.spec.alpha :as s]
+  (:require [clojure.core.matrix :as m]
+            [clojure.spec.alpha :as s]
             [com.fulcrologic.guardrails.core :refer [>defn >def | ? =>]]))
 
 (def grid-width 10)
@@ -234,7 +235,7 @@
   )
 
 (>defn game-state->visible-grid
-  "This compose helper is not responsible game state for any validation"
+  "This compose helper is not responsible for any validation"
   [{:keys [game-grid current-tetrimino player-row-col]}]
   [::game-state => ::game-grid]
   (let [[row col] player-row-col
@@ -254,3 +255,15 @@
                  (fn [current-grid]
                    (update-in current-grid [(+ row row-idx) (+ col col-idx)] (fn [_] tetrimino-cell-value)))))))
     @mutable-game-grid*))
+
+(s/def ::peaks (s/coll-of (s/nilable (s/int-in 0 grid-height))))
+
+(>defn peaks
+  [game-grid]
+  [::game-grid => ::peaks]
+  (let [transposed (m/transpose game-grid)]
+    (->> transposed
+         (mapv #(keep-indexed (fn [idx val] (when (pos? val) idx)) %))
+         (mapv #(if (seq %)
+                  (apply min %)
+                  nil)))))

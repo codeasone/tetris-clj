@@ -1,7 +1,7 @@
 (ns tetris.model
   (:require [clojure.core.matrix :as m]
             [clojure.spec.alpha :as s]
-            [com.fulcrologic.guardrails.core :refer [>defn >def | ? =>]]))
+            [com.fulcrologic.guardrails.core :refer [>defn]]))
 
 (def grid-width 10)
 (def grid-height 20)
@@ -278,9 +278,11 @@
                                           (mapv second))
         relevant-game-grid-peaks (as-> (peaks game-grid) $
                                    (subvec $ col (+ col (width-of-tetrimino current-tetrimino)))
-                                   (mapv (fn [extent] (or extent (dec grid-height))) $))
-        new-player-row-col [(- (apply min relevant-game-grid-peaks)
-                               (apply max extents-of-current-tetrimino)) col]
+                                   (mapv (fn [extent] (or extent grid-height)) $))
+
+        new-player-row-col [(apply min (->> (interleave relevant-game-grid-peaks extents-of-current-tetrimino)
+                                            (partition 2)
+                                            (mapv (fn [[peak extent]] (- peak (inc extent)))))) col]
         initial-position [0 (rand-int (- grid-width (width-of-tetrimino next-tetrimino)))]]
 
     (assoc game-state-before

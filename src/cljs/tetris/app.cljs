@@ -7,12 +7,23 @@
 
 (defonce game-state (r/atom (model/initial-game-state)))
 
+(def game-interval-ms 1000)
+
 (def handle-key-event
   (fn [event]
     (let [key-code (.-keyCode event)]
       (cond
-        (= key-code keys/enter) (js/alert "ENTER!")
-        (= key-code keys/escape) (js/alert "ESCAPE!")
+        (= key-code keys/enter)
+        (reset! game-state
+                (assoc @game-state :timer (or (:timer @game-state)
+                                              (.setInterval
+                                               js/window
+                                               (fn [] (keys/dispatch keys/down))
+                                               1000))))
+        (= key-code keys/escape)
+        (do
+          (.clearTimeout js/window (:timer @game-state))
+          (reset! game-state (assoc @game-state :timer nil)))
         (= key-code keys/space) (js/alert "SPACE!")
         (= key-code keys/left) (reset! game-state (model/handle-events @game-state [::model/move-left]))
         (= key-code keys/up) (reset! game-state (model/handle-events @game-state [::model/rotate-current]))

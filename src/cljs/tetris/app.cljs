@@ -24,7 +24,7 @@
         (do
           (.clearTimeout js/window (:timer @game-state))
           (reset! game-state (assoc @game-state :timer nil)))
-        (= key-code keys/space) (js/alert "SPACE!")
+        (= key-code keys/space) (reset! game-state (model/handle-events @game-state [::model/drop-current]))
         (= key-code keys/left) (reset! game-state (model/handle-events @game-state [::model/move-left]))
         (= key-code keys/up) (reset! game-state (model/handle-events @game-state [::model/rotate-current]))
         (= key-code keys/right) (reset! game-state (model/handle-events @game-state [::model/move-right]))

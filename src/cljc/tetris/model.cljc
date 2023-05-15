@@ -242,10 +242,27 @@
           (recur (assoc adjusted-game-state :player-row-col [(dec row) col])))
         adjusted-game-state))))
 
+(defn- handle-drop [{:keys [game-grid
+                            current-tetrimino
+                            _next-tetrimino
+                            player-row-col] :as game-state-before}]
+  (let [[_ col] player-row-col
+        extents-of-current-tetrimino (->> (extents-of-current-tetrimino current-tetrimino [0 col])
+                                          (mapv second))
+        relevant-game-grid-peaks (as-> (peaks game-grid) $
+                                   (subvec $ col (+ col (width-of-tetrimino current-tetrimino)))
+                                   (mapv (fn [extent] (or extent (dec grid-height))) $))
+        new-player-row-col [(- (apply min relevant-game-grid-peaks)
+                               (apply max extents-of-current-tetrimino)) col]]
+    (assoc game-state-before
+           :player-row-col new-player-row-col)))
+
 (s/def ::game-event #{::move-left
                       ::move-right
+                      ::move-down
                       ::rotate-current
-                      ::move-down})
+                      ::drop-current})
+
 (s/def ::game-events (s/coll-of ::game-event))
 
 (>defn handle-events [game-state-before events]
@@ -256,10 +273,13 @@
               (handle-left acc)
               ::move-right
               (handle-right acc)
+              ::move-down
+              (handle-down acc)
               ::rotate-current
               (handle-rotate acc)
-              ::move-down
-              (handle-down acc)))
+              ::drop-current
+              (handle-drop acc)))
+
           game-state-before events))
 
 (comment
@@ -294,8 +314,8 @@
   "This compose helper is not responsible for any validation"
   [{:keys [game-grid current-tetrimino player-row-col]}]
   [::game-state => ::game-grid]
-  (tap> {:current-tetrimino current-tetrimino
-         :player-row-col player-row-col})
+  ;; (tap> {:current-tetrimino current-tetrimino
+  ;;        :player-row-col player-row-col})
   (let [[row col] player-row-col
         mutable-game-grid* (atom game-grid)]
     ;; Code is easier to understand when implemented using local mutable atom

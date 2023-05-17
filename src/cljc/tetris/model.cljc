@@ -104,12 +104,43 @@
   [tetrimino]
   (count tetrimino))
 
+(defn entry-row-for-tetrimino
+  [tetrimino]
+  (- 1 (height-of-tetrimino tetrimino)))
+
+(defn entry-column-for-tetrimino
+  [tetrimino]
+  (rand-int (- grid-width (width-of-tetrimino tetrimino))))
+
 (defn initial-game-state
   []
-  (let [initial-tetrimino (random-tetrimino)
-        initial-position [(- 1 (height-of-tetrimino initial-tetrimino))
-                          (rand-int (- grid-width (width-of-tetrimino initial-tetrimino)))]]
-    {:game-grid empty-game-grid
+  (let [initial-grid empty-game-grid
+        ;; initial-grid [[0 0 0 0 0 0 0 0 0 0]
+        ;;               [0 0 0 0 0 0 0 0 0 0]
+        ;;               [0 0 0 0 0 0 0 0 0 0]
+        ;;               [0 0 0 0 0 0 0 0 0 0]
+        ;;               [0 0 0 0 0 0 0 0 0 0]
+        ;;               [0 0 0 0 0 0 0 0 0 0]
+        ;;               [0 0 0 0 0 0 0 0 0 0]
+        ;;               [0 0 0 0 0 0 0 0 0 0]
+        ;;               [0 0 0 0 0 0 0 0 0 0]
+        ;;               [0 0 0 0 0 0 0 0 0 0]
+        ;;               [0 0 0 0 0 0 0 0 0 0]
+        ;;               [0 0 0 0 0 0 0 0 0 0]
+        ;;               [0 0 0 0 0 0 0 0 0 0]
+        ;;               [0 0 0 0 0 0 0 0 0 0]
+        ;;               [0 0 0 0 0 0 0 0 0 0]
+        ;;               [0 0 0 0 0 0 0 0 0 0]
+        ;;               [0 0 0 0 0 0 0 0 0 0]
+        ;;               [0 0 0 0 0 0 0 0 0 0]
+        ;;               [0 0 0 0 0 0 0 0 0 0]
+        ;;               [0 0 1 1 1 1 1 1 1 1]]
+        initial-tetrimino (random-tetrimino)
+        ;; initial-tetrimino [[2 2]
+        ;;                    [2 2]]
+        initial-position [(entry-row-for-tetrimino initial-tetrimino)
+                          (entry-column-for-tetrimino initial-tetrimino)]]
+    {:game-grid initial-grid
      :current-tetrimino initial-tetrimino
      :next-tetrimino (random-tetrimino)
      :player-row-col initial-position
@@ -311,12 +342,6 @@
                                         (mapv (or second (dec grid-height))))
         relevant-game-grid-peaks (-> (peaks game-grid)
                                      (subvec col (+ col (width-of-tetrimino current-tetrimino))))]
-    ;; (tap> {:relevant-tetrimino-extents relevant-tetrimino-extents
-    ;;        :relevant-game-grid-peaks relevant-game-grid-peaks
-    ;;        :adjacent-to-peaks (->> (interleave relevant-tetrimino-extents relevant-game-grid-peaks)
-    ;;                                (partition 2)
-    ;;                                (some (fn [[extent peak]] (= (inc extent) peak)))
-    ;;                                boolean)})
     (->> (interleave relevant-tetrimino-extents relevant-game-grid-peaks)
          (partition 2)
          (some (fn [[extent peak]] (= (inc extent) peak)))
@@ -336,39 +361,40 @@
   (let [rows-to-remove (set (complete-rows game-state))
         replacement-rows-at-top (repeat (count rows-to-remove) empty-row)
         remaining-rows (remove-rows game-grid rows-to-remove)]
-    (assoc game-state :game-grid (concat replacement-rows-at-top remaining-rows))))
+    (assoc game-state :game-grid (into [] (concat replacement-rows-at-top remaining-rows)))))
 
 (>defn handle-events [game-state-before events]
   [::tetris ::game-events => ::tetris]
-  (let [{:keys [next-tetrimino] :as adjusted-game-state}
-        (reduce (fn [acc ev]
-                  (case ev
-                    ::move-left
-                    (handle-left acc)
-                    ::move-right
-                    (handle-right acc)
-                    ::move-down
-                    (handle-down acc)
-                    ::rotate-current
-                    (handle-rotate acc)
-                    ::drop-current
-                    (handle-drop acc)))
-                game-state-before events)]
+  (reduce
+   (fn [acc ev]
+     (let [{:keys [next-tetrimino] :as adjusted-game-state}
+           (case ev
+             ::move-left
+             (handle-left acc)
+             ::move-right
+             (handle-right acc)
+             ::move-down
+             (handle-down acc)
+             ::rotate-current
+             (handle-rotate acc)
+             ::drop-current
+             (handle-drop acc))]
 
-    (if (game-over? adjusted-game-state)
-      (assoc adjusted-game-state :game-status :game-status/game-over)
-      (let [tetrimino-adjacent-to-peaks? (tetrimino-adjacent-to-peaks? adjusted-game-state)
-            adjusted-game-state (cond-> adjusted-game-state
-                                  tetrimino-adjacent-to-peaks?
-                                  (assoc :game-grid (compose-current-tetrimino-into-game-grid adjusted-game-state)))
-            game-grid-contains-complete-rows? (seq (complete-rows adjusted-game-state))
-            start-playing-next-tetrimino? (or game-grid-contains-complete-rows? tetrimino-adjacent-to-peaks?)]
-        (cond-> adjusted-game-state
-          game-grid-contains-complete-rows?
-          clear-complete-rows
+       (if (game-over? adjusted-game-state)
+         (assoc adjusted-game-state :game-status :game-status/game-over)
+         (let [tetrimino-adjacent-to-peaks? (tetrimino-adjacent-to-peaks? adjusted-game-state)
+               adjusted-game-state (cond-> adjusted-game-state
+                                     tetrimino-adjacent-to-peaks?
+                                     (assoc :game-grid (compose-current-tetrimino-into-game-grid adjusted-game-state)))
+               game-grid-contains-complete-rows? (seq (complete-rows adjusted-game-state))
+               start-playing-next-tetrimino? (or game-grid-contains-complete-rows? tetrimino-adjacent-to-peaks?)]
+           (cond-> adjusted-game-state
+             game-grid-contains-complete-rows?
+             clear-complete-rows
 
-          start-playing-next-tetrimino?
-          (assoc :current-tetrimino next-tetrimino
-                 :player-row-col [(- (height-of-tetrimino next-tetrimino))
-                                  (rand-int (- grid-width (width-of-tetrimino next-tetrimino)))]
-                 :next-tetrimino (random-tetrimino)))))))
+             start-playing-next-tetrimino?
+             (assoc :current-tetrimino next-tetrimino
+                    :player-row-col [(- (height-of-tetrimino next-tetrimino))
+                                     (entry-column-for-tetrimino next-tetrimino)]
+                    :next-tetrimino (random-tetrimino)))))))
+   game-state-before events))

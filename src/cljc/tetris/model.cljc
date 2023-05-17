@@ -347,32 +347,3 @@
 
       game-over?
       (assoc :game-status :game-status/game-over))))
-
-(comment
-  (handle-events {:game-grid [[1 1 1 1 0 0 0 0 0 0]
-                              [0 0 0 0 0 0 0 0 0 0]
-                              [0 0 0 0 0 0 0 0 0 0]
-                              [0 0 0 0 0 0 0 0 0 0]
-                              [0 0 0 0 0 0 0 0 0 0]
-                              [0 0 0 0 0 0 0 0 0 0]
-                              [0 0 0 0 0 0 0 0 0 0]
-                              [0 0 0 0 0 0 0 0 0 0]
-                              [0 0 0 0 0 0 0 0 0 0]
-                              [0 0 0 0 0 0 0 0 0 0]
-                              [0 0 0 0 0 0 0 0 0 0]
-                              [0 0 0 0 0 0 0 0 0 0]
-                              [0 0 0 0 0 0 0 0 0 0]
-                              [0 0 0 0 0 0 0 0 0 0]
-                              [0 0 0 0 0 0 0 0 0 0]
-                              [0 0 0 0 0 0 0 0 0 0]
-                              [0 0 0 0 0 0 0 0 0 0]
-                              [0 0 0 0 0 0 0 0 0 0]
-                              [0 0 0 0 0 0 0 0 0 0]
-                              [0 0 0 0 0 0 0 0 0 0]]
-                  :current-tetrimino [[1 1 1 1]]
-                  :next-tetrimino (random-tetrimino)
-                  :player-row-col [0 0]
-                  :game-status :game-status/playing}
-                 [::move-right])
-  ;;
-  )

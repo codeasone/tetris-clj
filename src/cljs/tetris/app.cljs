@@ -9,8 +9,8 @@
 
 (def game-interval-ms 1000)
 
-(def handle-key-event
-  (fn [event]
+(defn handle-key-event [event]
+  (when-not (= :game-status/game-over (:game-status @game-state))
     (let [key-code (.-keyCode event)]
       (cond
         (= key-code keys/enter)
@@ -48,14 +48,26 @@
       6 [:div {:class (classes common-cell-classes "bg-pink-500")}]
       7 [:div {:class (classes common-cell-classes "bg-cyan-500")}])))
 
+(defn grid []
+  [:div {:class "w-40 relative"}
+   (into
+    [:div {:class "flex flex-col"}]
+    (for [row (model/compose-current-tetrimino-into-game-grid @game-state)]
+      (into
+       [:div {:class "flex"}]
+       (for [cell-value row]
+         [grid-cell cell-value]))))
+
+   (when (model/game-over? @game-state)
+     (.clearTimeout js/window (:timer @game-state))
+     (reset! game-state (assoc @game-state :timer nil))
+     [:div {:class (classes "absolute top-1/2 left-1/2 z-10 px-4 py-2"
+                            "bg-black text-white text-center rounded-lg"
+                            "transform -translate-x-1/2 -translate-y-1/2")}
+      "Game Over"])])
+
 (defn tetris []
-  (into
-   [:div {:class "flex flex-col"}]
-   (for [row (model/compose-current-tetrimino-into-game-grid @game-state)]
-     (into
-      [:div {:class "flex"}]
-      (for [cell-value row]
-        [grid-cell cell-value])))))
+  [grid])
 
 (defonce root (rdom/create-root (js/document.getElementById "root")))
 

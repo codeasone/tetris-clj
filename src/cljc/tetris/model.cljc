@@ -109,7 +109,7 @@
   ;;
   )
 
-(defn- random-tetrimino
+(defn random-tetrimino
   []
   (let [type (nth tetrimino-types (rand-int (count tetrimino-types)))
         possible-orientations (count (get tetrimino-shapes type))]
@@ -127,11 +127,13 @@
   []
   (let [initial-tetrimino (random-tetrimino)
         ;; initial-tetrimino [[1 1 1 1]]
-        initial-position [0 (rand-int (- grid-width (width-of-tetrimino initial-tetrimino)))]]
+        initial-position [(- 1 (height-of-tetrimino initial-tetrimino))
+                          (rand-int (- grid-width (width-of-tetrimino initial-tetrimino)))]]
     {:game-grid empty-game-grid
      :current-tetrimino initial-tetrimino
      :next-tetrimino (random-tetrimino)
-     :player-row-col initial-position}))
+     :player-row-col initial-position
+     :game-status :game-status/initialised}))
 
 (s/def ::tetrimino-cell-value (s/int-in 0 8))
 (s/def ::grid-of-tetrimino-cells (s/coll-of (s/coll-of ::tetrimino-cell-value)))
@@ -142,16 +144,21 @@
                                (s/every integer?)
                                #(<= 0 (first %) grid-width)))
 (s/def ::position-in-game-grid (s/and vector? #(= 2 (count %))
-                                      #(<= 0 (first %) grid-height)
+                                      #(<= -4 (first %) grid-height)
                                       #(<= 0 (second %) grid-width)))
 (s/def ::player-row-col ::position-in-game-grid)
-(s/def ::game-state (s/keys :req-un [::game-grid
-                                     ::current-tetrimino
-                                     ::player-row-col]
-                            :opt-un [::next-tetrimino]))
+(s/def ::game-status #{:game-status/initialised
+                       :game-status/playing
+                       :game-status/game-over})
+
+(s/def ::tetris (s/keys :req-un [::game-grid
+                                 ::current-tetrimino
+                                 ::player-row-col
+                                 ::game-status]
+                        :opt-un [::next-tetrimino]))
 
 (comment
-  (s/valid? ::game-state (initial-game-state))
+  (s/valid? ::tetris (initial-game-state))
   ;;
   )
 
@@ -166,7 +173,7 @@
          (map-indexed (fn [idx extent-within-tetrimino]
                         [(+ col idx) (+ row extent-within-tetrimino)])))))
 
-(s/def ::peaks (s/coll-of (s/nilable (s/int-in 0 grid-height))))
+(s/def ::peaks (s/coll-of (s/nilable (s/int-in 0 (inc grid-height)))))
 
 (>defn peaks
   [game-grid]
@@ -176,7 +183,7 @@
          (mapv #(keep-indexed (fn [idx val] (when (pos? val) idx)) %))
          (mapv #(if (seq %)
                   (apply min %)
-                  nil)))))
+                  grid-height)))))
 
 (defn tetrimino-collides-with-peaks?
   [{:keys [game-grid
@@ -202,9 +209,7 @@
 (>defn compose-current-tetrimino-into-game-grid
   "This compose helper is not responsible for any validation"
   [{:keys [game-grid current-tetrimino player-row-col]}]
-  [::game-state => ::game-grid]
-  ;; (tap> {:current-tetrimino current-tetrimino
-  ;;        :player-row-col player-row-col})
+  [::tetris => ::game-grid]
   (let [[row col] player-row-col
         mutable-game-grid* (atom game-grid)]
     ;; Code is easier to understand when implemented using local mutable atom
@@ -244,15 +249,6 @@
       (assoc-in game-state-before [:player-row-col 1] (inc col))
       game-state-before)))
 
-(defn- handle-down [{:keys [_game-grid
-                            current-tetrimino
-                            _next-tetrimino
-                            player-row-col] :as game-state-before}]
-  (let [[row _] player-row-col]
-    (if (< (+ row (height-of-tetrimino current-tetrimino)) grid-height)
-      (assoc-in game-state-before [:player-row-col 0] (inc row))
-      game-state-before)))
-
 (defn- handle-rotate [{:keys [current-tetrimino
                               player-row-col] :as game-state-before}]
   (let [[row col] player-row-col
@@ -262,6 +258,7 @@
                          ;; Boundary handling on rhs of game-grid
                          (> (+ col rotated-width) grid-width)
                          (assoc :player-row-col [row (- grid-width rotated-width)]))]
+
     (loop [{:keys [player-row-col] :as adjusted-game-state} new-game-state]
       (if (or (tetrimino-crosses-baseline? adjusted-game-state)
               (tetrimino-collides-with-peaks? adjusted-game-state))
@@ -269,9 +266,17 @@
           (recur (assoc adjusted-game-state :player-row-col [(dec row) col])))
         adjusted-game-state))))
 
+(defn- handle-down [{:keys [_game-grid
+                            current-tetrimino
+                            _next-tetrimino
+                            player-row-col] :as game-state-before}]
+  (let [[row _] player-row-col]
+    (if (< (+ row (height-of-tetrimino current-tetrimino)) grid-height)
+      (assoc-in game-state-before [:player-row-col 0] (inc row))
+      game-state-before)))
+
 (defn- handle-drop [{:keys [game-grid
                             current-tetrimino
-                            next-tetrimino
                             player-row-col] :as game-state-before}]
   (let [[_ col] player-row-col
         extents-of-current-tetrimino (->> (extents-of-current-tetrimino current-tetrimino [0 col])
@@ -279,19 +284,11 @@
         relevant-game-grid-peaks (as-> (peaks game-grid) $
                                    (subvec $ col (+ col (width-of-tetrimino current-tetrimino)))
                                    (mapv (fn [extent] (or extent grid-height)) $))
-
         new-player-row-col [(apply min (->> (interleave relevant-game-grid-peaks extents-of-current-tetrimino)
                                             (partition 2)
-                                            (mapv (fn [[peak extent]] (- peak (inc extent)))))) col]
-        initial-position [0 (rand-int (- grid-width (width-of-tetrimino next-tetrimino)))]]
+                                            (mapv (fn [[peak extent]] (- peak (inc extent)))))) col]]
 
-    (assoc game-state-before
-           :game-grid (compose-current-tetrimino-into-game-grid {:game-grid game-grid
-                                                                 :current-tetrimino current-tetrimino
-                                                                 :player-row-col new-player-row-col})
-           :current-tetrimino next-tetrimino
-           :next-tetrimino (random-tetrimino)
-           :player-row-col initial-position)))
+    (assoc game-state-before :player-row-col new-player-row-col)))
 
 (s/def ::game-event #{::move-left
                       ::move-right
@@ -301,22 +298,55 @@
 
 (s/def ::game-events (s/coll-of ::game-event))
 
-(>defn handle-events [game-state-before events]
-  [::game-state ::game-events => ::game-state]
-  (reduce (fn [acc ev]
-            (case ev
-              ::move-left
-              (handle-left acc)
-              ::move-right
-              (handle-right acc)
-              ::move-down
-              (handle-down acc)
-              ::rotate-current
-              (handle-rotate acc)
-              ::drop-current
-              (handle-drop acc)))
+(>defn start-playing-next-tetrimino? [{:keys [game-grid
+                                              current-tetrimino
+                                              player-row-col]}]
+  [::tetris => boolean?]
+  (let [[_ col] player-row-col
+        relevant-tetrimino-extents (->> (extents-of-current-tetrimino current-tetrimino player-row-col)
+                                        (mapv (or second (dec grid-height))))
+        relevant-game-grid-peaks (-> (peaks game-grid)
+                                     (subvec col (+ col (width-of-tetrimino current-tetrimino))))]
+    (->> (interleave relevant-tetrimino-extents relevant-game-grid-peaks)
+         (partition 2)
+         (some (fn [[extent peak]] (= (inc extent) peak)))
+         boolean)))
 
-          game-state-before events))
+(>defn game-over? [{:keys [player-row-col] :as game-state}]
+  [::tetris => boolean?]
+  (let [[row _] player-row-col]
+    (and (<= row 0)
+         (start-playing-next-tetrimino? game-state))))
+
+(>defn handle-events [game-state-before events]
+  [::tetris ::game-events => ::tetris]
+  (let [{:keys [next-tetrimino] :as adjusted-game-state}
+        (reduce (fn [acc ev]
+                  (case ev
+                    ::move-left
+                    (handle-left acc)
+                    ::move-right
+                    (handle-right acc)
+                    ::move-down
+                    (handle-down acc)
+                    ::rotate-current
+                    (handle-rotate acc)
+                    ::drop-current
+                    (handle-drop acc)))
+                game-state-before events)
+        start-playing-next-tetrimino? (start-playing-next-tetrimino? adjusted-game-state)
+        game-over? (game-over? adjusted-game-state)]
+
+    (cond-> adjusted-game-state
+      start-playing-next-tetrimino?
+      (assoc :game-grid (compose-current-tetrimino-into-game-grid adjusted-game-state)
+             :current-tetrimino next-tetrimino
+             :player-row-col [(- (height-of-tetrimino next-tetrimino))
+                              (rand-int (- grid-width (width-of-tetrimino next-tetrimino)))]
+             :next-tetrimino (random-tetrimino))
+
+      game-over?
+      (assoc :game-status :game-status/game-over))))
 
 (comment
   (handle-events {:game-grid [[1 1 1 1 0 0 0 0 0 0]
@@ -341,7 +371,8 @@
                               [0 0 0 0 0 0 0 0 0 0]]
                   :current-tetrimino [[1 1 1 1]]
                   :next-tetrimino (random-tetrimino)
-                  :player-row-col [0 0]}
+                  :player-row-col [0 0]
+                  :game-status :game-status/playing}
                  [::move-right])
   ;;
   )

@@ -10,8 +10,10 @@
     "dev": "shadow-cljs watch app & yarn styles:dev",
     "release": "shadow-cljs release app && yarn styles:release",
     "serve": "shadow-cljs server",
+    "test": "clj -M:test",
     "styles:dev": "tailwindcss -i ./src/css/main.css -o resources/public/css/main.css --watch",
-    "styles:release": "tailwindcss -i ./src/css/main.css -o resources/public/css/main.css --minify"
+    "styles:release": "tailwindcss -i ./src/css/main.css -o resources/public/css/main.css --minify",
+    "deps:tree": "clj -X:deps tree :aliases '[:test]'"
   },
   "devDependencies": {
     "react": "^18.2.0",

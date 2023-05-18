@@ -131,7 +131,7 @@
 
 (defn entry-row-for-tetrimino
   [tetrimino]
-  (- 1 (height-of-tetrimino tetrimino)))
+  (- (height-of-tetrimino tetrimino)))
 
 (defn entry-column-for-tetrimino
   [tetrimino]
@@ -190,7 +190,7 @@
 (s/def ::game-status #{:game-status/initialised
                        :game-status/playing
                        :game-status/game-over})
-(s/def ::game-score pos-int?)
+(s/def ::game-score nat-int?)
 
 (s/def ::tetris (s/keys :req-un [::game-grid
                                  ::current-tetrimino

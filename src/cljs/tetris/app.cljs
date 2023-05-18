@@ -14,15 +14,16 @@
     (let [key-code (.-keyCode event)]
       (cond
         (= key-code keys/enter)
-        (reset! game-state
-                (assoc @game-state :timer (or (:timer @game-state)
-                                              (.setInterval
-                                               js/window
-                                               (fn [] (keys/dispatch keys/down))
-                                               1000))))
+        (when (nil? (:timer @game-state))
+          (reset! game-state
+                  (assoc @game-state :timer (or (:timer @game-state)
+                                                (.setInterval
+                                                 js/window
+                                                 (fn [] (keys/dispatch keys/down))
+                                                 1000)))))
         (= key-code keys/escape)
-        (do
-          (.clearTimeout js/window (:timer @game-state))
+        (when-let [timer (:timer @game-state)]
+          (.clearTimeout js/window timer)
           (reset! game-state (assoc @game-state :timer nil)))
         (= key-code keys/space) (reset! game-state (logic/handle-events @game-state [::logic/drop]))
         (= key-code keys/left) (reset! game-state (logic/handle-events @game-state [::logic/move-left]))
@@ -48,13 +49,16 @@
       6 [:div {:class (classes common-cell-classes "bg-pink-500")}]
       7 [:div {:class (classes common-cell-classes "bg-cyan-500")}])))
 
+(defn message []
+  [:h1 {:class "font-bold"} "Press ENTER key to play"])
+
 (defn score [{:keys [game-score]}]
   [:h1 {:class "font-bold mt-3"} (str "Score: " game-score)])
 
 (defn grid [game-state]
-  [:div {:class "w-60 relative"}
+  [:div {:class "w-60 relative mt-3"}
    (into
-    [:div {:class "flex flex-col"}]
+    [:div {:class "flex flex-col border"}]
     (for [row (drop logic/lead-in-grid-height (logic/compose-current-tetrimino-into-game-grid game-state))]
       (into
        [:div {:class "flex"}]
@@ -62,8 +66,9 @@
          [grid-cell cell-value]))))
 
    (when (logic/game-over? game-state)
-     (.clearTimeout js/window (:timer @game-state))
-     (reset! game-state (assoc @game-state :timer nil))
+     (when-let [timer (:timer game-state)]
+       (.clearTimeout js/window timer))
+
      [:div {:class (classes "absolute top-1/2 left-1/2 z-10 px-4 py-2"
                             "bg-black text-white text-center rounded-lg"
                             "transform -translate-x-1/2 -translate-y-1/2")}
@@ -72,6 +77,7 @@
 (defn tetris []
   (let [game-state @game-state]
     [:div {:class "flex flex-col items-center mt-6"}
+     [message]
      [grid game-state]
      [score game-state]]))
 

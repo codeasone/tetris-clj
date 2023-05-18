@@ -24,9 +24,9 @@
         (do
           (.clearTimeout js/window (:timer @game-state))
           (reset! game-state (assoc @game-state :timer nil)))
-        (= key-code keys/space) (reset! game-state (logic/handle-events @game-state [::logic/drop-current]))
+        (= key-code keys/space) (reset! game-state (logic/handle-events @game-state [::logic/drop]))
         (= key-code keys/left) (reset! game-state (logic/handle-events @game-state [::logic/move-left]))
-        (= key-code keys/up) (reset! game-state (logic/handle-events @game-state [::logic/rotate-current]))
+        (= key-code keys/up) (reset! game-state (logic/handle-events @game-state [::logic/rotate]))
         (= key-code keys/right) (reset! game-state (logic/handle-events @game-state [::logic/move-right]))
         (= key-code keys/down) (reset! game-state (logic/handle-events @game-state [::logic/move-down]))
         :else nil))))

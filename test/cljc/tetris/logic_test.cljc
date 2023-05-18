@@ -691,7 +691,7 @@
       [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]
       [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]
       [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]]
-     [::logic/rotate-current]))
+     [::logic/rotate]))
 
   (testing "when rotation requires vertical repositioning"
     (testing "in empty grid"
@@ -720,7 +720,7 @@
         [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 3 0 0 0 0]
         [0 0 0 0 * * * 0 0 0 -> 0 0 0 0 3 3 0 0 0 0]
         [0 0 0 0 0 * 0 0 0 0 -> 0 0 0 0 0 3 0 0 0 0]]
-       [::logic/rotate-current]))
+       [::logic/rotate]))
 
     (testing "when adjacent to some peaks"
       (check-scenario
@@ -748,7 +748,7 @@
         [0 0 5 2 2 2 2 2 2 2 -> 0 0 5 2 2 2 2 2 2 2]
         [0 0 5 2 2 2 2 2 2 2 -> 0 0 5 2 2 2 2 2 2 2]
         [0 5 5 2 2 2 2 2 2 2 -> 0 5 5 2 2 2 2 2 2 2]]
-       [::logic/rotate-current]))))
+       [::logic/rotate]))))
 
 (deftest dropping-the-current-tetrmino-test
   (testing "when empty grid"
@@ -777,7 +777,7 @@
       [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]
       [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 3 3 3 0 0 0 0]
       [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 3 0 0 0 0 0]]
-     [::logic/drop-current]))
+     [::logic/drop]))
 
   (testing "basic peak test"
     (check-scenario
@@ -805,7 +805,7 @@
       [0 3 0 0 0 0 0 0 0 0 -> 0 3 0 0 0 0 0 0 0 0]
       [0 3 3 0 0 0 0 0 0 0 -> 0 3 3 0 0 0 0 0 0 0]
       [0 3 0 0 0 0 0 0 0 0 -> 0 3 0 0 0 0 0 0 0 0]]
-     [::logic/drop-current]))
+     [::logic/drop]))
 
   (testing "another basic peak test"
     (check-scenario
@@ -833,7 +833,7 @@
       [0 0 0 0 0 0 0 0 0 0 -> 0 0 4 4 0 0 0 0 0 0]
       [0 2 2 0 0 0 0 0 0 0 -> 0 2 2 4 0 0 0 0 0 0]
       [0 2 2 0 0 0 0 0 0 0 -> 0 2 2 4 0 0 0 0 0 0]]
-     [::logic/drop-current]))
+     [::logic/drop]))
 
   (testing "when there are peaks"
     (check-scenario
@@ -862,7 +862,7 @@
       [4 0 3 3 3 0 5 0 0 1 -> 4 0 3 3 3 3 5 0 0 1]
       [4 4 0 3 0 0 5 5 5 1 -> 4 4 0 3 0 0 5 5 5 1]]
 
-     [::logic/drop-current])))
+     [::logic/drop])))
 
 (deftest game-grid-peaks-test
   (testing "empty grid"
@@ -1264,7 +1264,7 @@
         [1 1 1 1 3 3 3 0 0 1 -> 0 0 0 0 0 0 0 0 0 1]
         [2 2 2 2 2 2 2 0 0 2 -> 0 0 0 0 0 3 0 0 0 1]
         [2 2 2 2 2 2 2 0 0 2 -> 1 1 1 1 3 3 3 0 0 1]]
-       [::logic/drop-current]))
+       [::logic/drop]))
 
     (testing "above baseline"
       (check-scenario
@@ -1292,7 +1292,7 @@
         [2 2 2 2 2 2 2 0 0 2 -> 1 1 1 1 3 3 3 0 0 1]
         [2 2 0 3 0 2 2 3 3 3 -> 2 2 0 3 0 2 2 3 3 3]
         [2 2 3 3 3 2 2 0 3 0 -> 2 2 3 3 3 2 2 0 3 0]]
-       [::logic/drop-current])))
+       [::logic/drop])))
 
   (testing "moving down"
     (testing "on to baseline"

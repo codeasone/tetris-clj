@@ -277,9 +277,9 @@
   [coll rows]
   (into [] (keep-indexed #(when (not (contains? rows %1)) %2) coll)))
 
-(defn- handle-left [{:keys [game-grid
-                            current-tetrimino
-                            player-row-col] :as game-state-before}]
+(defn- move-left [{:keys [game-grid
+                          current-tetrimino
+                          player-row-col] :as game-state-before}]
   (let [[row col] player-row-col
         relevant-rows (select-rows game-grid
                                    (set (range (+ row lead-in-grid-height)
@@ -296,9 +296,9 @@
         game-state-before)
       game-state-before)))
 
-(defn- handle-right [{:keys [game-grid
-                             current-tetrimino
-                             player-row-col] :as game-state-before}]
+(defn- move-right [{:keys [game-grid
+                           current-tetrimino
+                           player-row-col] :as game-state-before}]
   (let [[row col] player-row-col
         relevant-rows (select-rows game-grid
                                    (set (range (+ row lead-in-grid-height)
@@ -315,8 +315,17 @@
         game-state-before)
       game-state-before)))
 
-(defn- handle-rotate [{:keys [current-tetrimino
-                              player-row-col] :as game-state-before}]
+(defn- move-down [{:keys [_game-grid
+                          current-tetrimino
+                          _next-tetrimino
+                          player-row-col] :as game-state-before}]
+  (let [[row _] player-row-col]
+    (if (< (+ row (height-of-tetrimino current-tetrimino)) visible-grid-height)
+      (assoc-in game-state-before [:player-row-col 0] (inc row))
+      game-state-before)))
+
+(defn- rotate-current [{:keys [current-tetrimino
+                               player-row-col] :as game-state-before}]
   (let [[row col] player-row-col
         rotated (rotate current-tetrimino)
         rotated-width (width-of-tetrimino rotated)
@@ -332,18 +341,9 @@
           (recur (assoc adjusted-game-state :player-row-col [(dec row) col])))
         adjusted-game-state))))
 
-(defn- handle-down [{:keys [_game-grid
-                            current-tetrimino
-                            _next-tetrimino
-                            player-row-col] :as game-state-before}]
-  (let [[row _] player-row-col]
-    (if (< (+ row (height-of-tetrimino current-tetrimino)) visible-grid-height)
-      (assoc-in game-state-before [:player-row-col 0] (inc row))
-      game-state-before)))
-
-(defn- handle-drop [{:keys [game-grid
-                            current-tetrimino
-                            player-row-col] :as game-state-before}]
+(defn- drop-current [{:keys [game-grid
+                             current-tetrimino
+                             player-row-col] :as game-state-before}]
   (let [[_ col] player-row-col
         extents-of-current-tetrimino (->> (extents-of-current-tetrimino current-tetrimino [0 col])
                                           (mapv second))
@@ -353,17 +353,15 @@
         new-player-row-col [(apply min (->> (interleave relevant-game-grid-peaks extents-of-current-tetrimino)
                                             (partition 2)
                                             (mapv (fn [[peak extent]]
-                                                    (tap> {:peak peak})
                                                     (- peak (inc extent)))))) col]]
 
-    (tap> {:new-player-row-col new-player-row-col})
     (assoc game-state-before :player-row-col new-player-row-col)))
 
 (s/def ::game-event #{::move-left
                       ::move-right
                       ::move-down
-                      ::rotate-current
-                      ::drop-current})
+                      ::rotate
+                      ::drop})
 
 (s/def ::game-events (s/coll-of ::game-event))
 
@@ -404,15 +402,15 @@
      (let [{:keys [next-tetrimino] :as adjusted-game-state}
            (case ev
              ::move-left
-             (handle-left acc)
+             (move-left acc)
              ::move-right
-             (handle-right acc)
+             (move-right acc)
              ::move-down
-             (handle-down acc)
-             ::rotate-current
-             (handle-rotate acc)
-             ::drop-current
-             (handle-drop acc))]
+             (move-down acc)
+             ::rotate
+             (rotate-current acc)
+             ::drop
+             (drop-current acc))]
 
        (if (game-over? adjusted-game-state)
          (assoc adjusted-game-state :game-status :game-status/game-over)

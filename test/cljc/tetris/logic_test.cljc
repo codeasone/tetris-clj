@@ -1,7 +1,7 @@
-(ns tetris.model-test
+(ns tetris.logic-test
   (:require #?(:clj [clojure.test :refer :all]
                :cljs [cljs.test :refer :all :include-macros true])
-            [tetris.model :as model]))
+            [tetris.logic :as logic]))
 
 (defn tetrimino-to-coords [tetrimino]
   (->> tetrimino
@@ -35,7 +35,7 @@
    (fn [acc type tetriminos]
      (assoc acc type (mapv tetrimino-to-coords tetriminos)))
    {}
-   model/tetrimino-shapes))
+   logic/tetrimino-shapes))
 
 (defn- game-state-from-before-grid
   [test-grid]
@@ -45,7 +45,7 @@
         (->> test-grid
              flatten
              (keep-indexed (fn [idx elem] (when (= elem *) idx)))
-             (mapv (fn [idx] [(unchecked-divide-int idx model/grid-width) (rem idx model/grid-width)])))
+             (mapv (fn [idx] [(unchecked-divide-int idx logic/grid-width) (rem idx logic/grid-width)])))
         row-offset (apply min (mapv first current-tetrimino-coords))
         col-offset (apply min (mapv second current-tetrimino-coords))
         player-row-col [row-offset col-offset]
@@ -59,8 +59,8 @@
                                                    (get tetrimino-shape-normalised-coords
                                                         current-tetrimino-type)))]
     {:game-grid game-grid
-     :current-tetrimino (get-in model/tetrimino-shapes [current-tetrimino-type current-tetrimino-idx])
-     :next-tetrimino (model/random-tetrimino)
+     :current-tetrimino (get-in logic/tetrimino-shapes [current-tetrimino-type current-tetrimino-idx])
+     :next-tetrimino (logic/random-tetrimino)
      :player-row-col player-row-col
      :game-status :game-status/playing}))
 
@@ -349,8 +349,8 @@
         after-grid (mapv #(drop-while (fn [token] (not= token '->)) %) before->after)
         after-grid (mapv #(into [] (rest %)) after-grid)]
     `(is (= ~after-grid
-            (model/compose-current-tetrimino-into-game-grid
-             (model/handle-events (game-state-from-before-grid
+            (logic/compose-current-tetrimino-into-game-grid
+             (logic/handle-events (game-state-from-before-grid
                                    ~before-grid)
                                   ~events))))))
 
@@ -401,7 +401,7 @@
       [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]
       [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]
       [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]]
-     [::model/move-down]))
+     [::logic/move-down]))
 
   (testing "at bottom"
     (check-scenario
@@ -425,7 +425,7 @@
       [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]
       [0 0 0 * * * 0 0 0 0 -> 0 0 0 3 3 3 0 0 0 0]
       [0 0 0 0 * 0 0 0 0 0 -> 0 0 0 0 3 0 0 0 0 0]]
-     [::model/move-down])))
+     [::logic/move-down])))
 
 (deftest moving-current-tetrimino-horizontally-test
   (testing "basic positive test"
@@ -451,8 +451,8 @@
         [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]
         [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]
         [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]]
-       [::model/move-left
-        ::model/move-left]))
+       [::logic/move-left
+        ::logic/move-left]))
 
     (testing "moving right"
       (check-scenario
@@ -476,8 +476,8 @@
         [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]
         [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]
         [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]]
-       [::model/move-right
-        ::model/move-right])))
+       [::logic/move-right
+        ::logic/move-right])))
 
   (testing "cannot move into populated space"
     (testing "to the left"
@@ -502,7 +502,7 @@
         [0 0 0 0 0 0 0 0 * 0 -> 0 0 0 0 0 0 0 0 4 0]
         [0 0 0 3 3 3 * * * 0 -> 0 0 0 3 3 3 4 4 4 0]
         [0 0 0 0 3 0 0 0 0 0 -> 0 0 0 0 3 0 0 0 0 0]]
-       [::model/move-left]))
+       [::logic/move-left]))
 
     (testing "to the right"
       (check-scenario
@@ -526,7 +526,7 @@
         [0 0 0 0 0 * 0 0 0 0 -> 0 0 0 0 0 4 0 0 0 0]
         [0 0 0 * * * 3 3 3 0 -> 0 0 0 4 4 4 3 3 3 0]
         [0 0 0 0 0 0 0 3 0 0 -> 0 0 0 0 0 0 0 3 0 0]]
-       [::model/move-right])))
+       [::logic/move-right])))
 
   #_(testing "boundary limits"
       (testing "at rhs"
@@ -551,7 +551,7 @@
           [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]
           [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]
           [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]]
-         [::model/move-right]))
+         [::logic/move-right]))
 
       (testing "at lhs"
         (check-scenario
@@ -575,7 +575,7 @@
           [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]
           [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]
           [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]]
-         [::model/move-left]))))
+         [::logic/move-left]))))
 
 (deftest rotating-current-tetrmino-test
   (testing "when rotation requires horizontal repositioning"
@@ -600,7 +600,7 @@
       [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]
       [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]
       [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]]
-     [::model/rotate-current]))
+     [::logic/rotate-current]))
 
   (testing "when rotation requires vertical repositioning"
     (testing "in empty grid"
@@ -625,7 +625,7 @@
         [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 3 0 0 0 0]
         [0 0 0 0 * * * 0 0 0 -> 0 0 0 0 3 3 0 0 0 0]
         [0 0 0 0 0 * 0 0 0 0 -> 0 0 0 0 0 3 0 0 0 0]]
-       [::model/rotate-current]))
+       [::logic/rotate-current]))
 
     (testing "when adjacent to some peaks"
       (check-scenario
@@ -649,7 +649,7 @@
         [0 0 5 2 2 2 2 2 2 2 -> 0 0 5 2 2 2 2 2 2 2]
         [0 0 5 2 2 2 2 2 2 2 -> 0 0 5 2 2 2 2 2 2 2]
         [0 5 5 2 2 2 2 2 2 2 -> 0 5 5 2 2 2 2 2 2 2]]
-       [::model/rotate-current]))))
+       [::logic/rotate-current]))))
 
 (deftest dropping-the-current-tetrmino-test
   (testing "when empty grid"
@@ -674,7 +674,7 @@
       [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]
       [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 3 3 3 0 0 0 0]
       [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 3 0 0 0 0 0]]
-     [::model/drop-current]))
+     [::logic/drop-current]))
 
   (testing "basic peak test"
     (check-scenario
@@ -698,7 +698,7 @@
       [0 3 0 0 0 0 0 0 0 0 -> 0 3 0 0 0 0 0 0 0 0]
       [0 3 3 0 0 0 0 0 0 0 -> 0 3 3 0 0 0 0 0 0 0]
       [0 3 0 0 0 0 0 0 0 0 -> 0 3 0 0 0 0 0 0 0 0]]
-     [::model/drop-current]))
+     [::logic/drop-current]))
 
   (testing "another basic peak test"
     (check-scenario
@@ -722,7 +722,7 @@
       [0 0 0 0 0 0 0 0 0 0 -> 0 0 4 4 0 0 0 0 0 0]
       [0 2 2 0 0 0 0 0 0 0 -> 0 2 2 4 0 0 0 0 0 0]
       [0 2 2 0 0 0 0 0 0 0 -> 0 2 2 4 0 0 0 0 0 0]]
-     [::model/drop-current]))
+     [::logic/drop-current]))
 
   (testing "when there are peaks"
     (check-scenario
@@ -747,13 +747,13 @@
       [4 0 3 3 3 0 5 0 0 1 -> 4 0 3 3 3 3 5 0 0 1]
       [4 4 0 3 0 0 5 5 5 1 -> 4 4 0 3 0 0 5 5 5 1]]
 
-     [::model/drop-current])))
+     [::logic/drop-current])))
 
 (deftest game-grid-peaks-test
   (testing "empty grid"
     ;; Imagine there is a line of filled cells below the baseline :-)
-    (is (= (repeat 10 model/grid-height)
-           (model/peaks [[0 0 0 0 0 0 0 0 0 0]
+    (is (= (repeat 10 logic/grid-height)
+           (logic/peaks [[0 0 0 0 0 0 0 0 0 0]
                          [0 0 0 0 0 0 0 0 0 0]
                          [0 0 0 0 0 0 0 0 0 0]
                          [0 0 0 0 0 0 0 0 0 0]
@@ -776,7 +776,7 @@
 
   (testing "full grid"
     (is (= [0 0 0 0 0 0 0 0 0 0]
-           (model/peaks [[2 2 2 2 2 2 2 2 2 2]
+           (logic/peaks [[2 2 2 2 2 2 2 2 2 2]
                          [2 2 2 2 2 2 2 2 2 2]
                          [2 2 2 2 2 2 2 2 2 2]
                          [2 2 2 2 2 2 2 2 2 2]
@@ -799,7 +799,7 @@
 
   (testing "partial grid"
     (is (= [20 15 13 12 10 10 10 10 11 8]
-           (model/peaks [[0 0 0 0 0 0 0 0 0 0]
+           (logic/peaks [[0 0 0 0 0 0 0 0 0 0]
                          [0 0 0 0 0 0 0 0 0 0]
                          [0 0 0 0 0 0 0 0 0 0]
                          [0 0 0 0 0 0 0 0 0 0]
@@ -822,29 +822,29 @@
 
 (deftest extents-of-current-tetrimino-test
   (is (= [[5 12] [6 11]]
-         (model/extents-of-current-tetrimino [[3 0]
+         (logic/extents-of-current-tetrimino [[3 0]
                                               [3 3]
                                               [3 0]]
                                              [10 5]))))
 
 (deftest tetrimino-crosses-baseline?-test
   (testing "within the game-grid"
-    (is (false? (model/tetrimino-crosses-baseline? {:current-tetrimino [[2 2]
+    (is (false? (logic/tetrimino-crosses-baseline? {:current-tetrimino [[2 2]
                                                                         [2 2]]
                                                     :player-row-col [0 0]}))))
   (testing "on the baseline"
-    (is (false? (model/tetrimino-crosses-baseline? {:current-tetrimino [[2 2]
+    (is (false? (logic/tetrimino-crosses-baseline? {:current-tetrimino [[2 2]
                                                                         [2 2]]
                                                     :player-row-col [18 0]}))))
   (testing "crossing the baseline"
-    (is (true? (model/tetrimino-crosses-baseline? {:current-tetrimino [[2 2]
+    (is (true? (logic/tetrimino-crosses-baseline? {:current-tetrimino [[2 2]
                                                                        [2 2]]
                                                    :player-row-col [19 0]})))))
 
 (deftest tetrimino-collides-with-peaks?-test
   (testing "empty grid"
     (testing "when strictly within it"
-      (is (false? (model/tetrimino-collides-with-peaks?
+      (is (false? (logic/tetrimino-collides-with-peaks?
                    {:game-grid [[0 0 0 0 0 0 0 0 0 0]
                                 [0 0 0 0 0 0 0 0 0 0]
                                 [0 0 0 0 0 0 0 0 0 0]
@@ -873,7 +873,7 @@
                     :player-row-col [4 5]}))))
 
     (testing "when adjacent to base of grid"
-      (is (false? (model/tetrimino-collides-with-peaks?
+      (is (false? (logic/tetrimino-collides-with-peaks?
                    {:game-grid [[0 0 0 0 0 0 0 0 0 0]
                                 [0 0 0 0 0 0 0 0 0 0]
                                 [0 0 0 0 0 0 0 0 0 0]
@@ -902,7 +902,7 @@
                     :player-row-col [17 5]}))))
 
     (testing "when current position and orientation of tetrimino would make it cross baseline of game-grid"
-      (is (true? (model/tetrimino-collides-with-peaks?
+      (is (true? (logic/tetrimino-collides-with-peaks?
                   {:game-grid [[0 0 0 0 0 0 0 0 0 0]
                                [0 0 0 0 0 0 0 0 0 0]
                                [0 0 0 0 0 0 0 0 0 0]
@@ -931,7 +931,7 @@
                    :player-row-col [19 0]})))))
 
   (testing "simple collision"
-    (is (true? (model/tetrimino-collides-with-peaks?
+    (is (true? (logic/tetrimino-collides-with-peaks?
                 {:game-grid [[0 0 0 0 0 0 0 0 0 0]
                              [0 0 0 0 0 0 0 0 0 0]
                              [0 0 0 0 0 0 0 0 0 0]
@@ -960,7 +960,7 @@
                  :player-row-col [9 4]}))))
 
   (testing "all possible adjacencies with peaks"
-    (is (every? #(false? (model/tetrimino-collides-with-peaks?
+    (is (every? #(false? (logic/tetrimino-collides-with-peaks?
                           {:game-grid [[0 0 0 0 0 0 0 0 0 0]
                                        [0 0 0 0 0 0 0 0 0 0]
                                        [0 0 0 0 0 0 0 0 0 0]
@@ -990,7 +990,7 @@
                 [[13 0] [11 1] [10 2] [8 3] [7 4] [7 5] [7 6] [7 7] [6 8]])))
 
   (testing "earliest collisions with peaks"
-    (is (every? #(true? (model/tetrimino-collides-with-peaks?
+    (is (every? #(true? (logic/tetrimino-collides-with-peaks?
                          {:game-grid [[0 0 0 0 0 0 0 0 0 0]
                                       [0 0 0 0 0 0 0 0 0 0]
                                       [0 0 0 0 0 0 0 0 0 0]
@@ -1021,7 +1021,7 @@
 
 (deftest game-over?-test
   (testing "when the next tetrimino is just entering in *and* adjacent to a peak in the game grid"
-    (is (true? (model/game-over? {:game-grid [[0 0 0 0 0 0 0 0 0 0]
+    (is (true? (logic/game-over? {:game-grid [[0 0 0 0 0 0 0 0 0 0]
                                               [0 0 0 0 0 0 0 0 0 0]
                                               [1 0 0 0 0 0 0 0 0 0]
                                               [1 0 0 0 0 0 0 0 0 0]
@@ -1050,7 +1050,7 @@
                                   :player-row-col [-2 0]}))))
 
   (testing "when the tetrimino is at row 0 *and* adjacent to a peak in the game grid"
-    (is (true? (model/game-over? {:game-grid [[0 0 0 0 0 0 0 0 0 0]
+    (is (true? (logic/game-over? {:game-grid [[0 0 0 0 0 0 0 0 0 0]
                                               [0 0 0 0 0 0 0 0 0 0]
                                               [2 2 0 0 0 0 0 0 0 0]
                                               [2 2 0 0 0 0 0 0 0 0]
@@ -1101,7 +1101,7 @@
         [1 1 1 1 3 3 3 0 0 1 -> 0 0 0 0 0 0 0 0 0 1]
         [2 2 2 2 2 2 2 0 0 2 -> 0 0 0 0 0 3 0 0 0 1]
         [2 2 2 2 2 2 2 0 0 2 -> 1 1 1 1 3 3 3 0 0 1]]
-       [::model/drop-current]))
+       [::logic/drop-current]))
 
     (testing "above baseline"
       (check-scenario
@@ -1127,7 +1127,7 @@
         [2 2 2 2 2 2 2 0 0 2 -> 1 1 1 1 3 3 3 0 0 1]
         [2 2 0 3 0 2 2 3 3 3 -> 2 2 0 3 0 2 2 3 3 3]
         [2 2 3 3 3 2 2 0 3 0 -> 2 2 3 3 3 2 2 0 3 0]]
-       [::model/drop-current])))
+       [::logic/drop-current])))
 
   (testing "moving down"
     (testing "on to baseline"
@@ -1152,7 +1152,7 @@
         [1 1 1 1 3 3 3 * * 1 -> 0 0 0 0 0 0 0 0 0 1]
         [2 2 2 2 2 2 2 * * 2 -> 0 0 0 0 0 3 0 0 0 1]
         [2 2 2 2 2 2 2 0 0 2 -> 1 1 1 1 3 3 3 0 0 1]]
-       [::model/move-down]))
+       [::logic/move-down]))
 
     (testing "above baseline"
       (check-scenario
@@ -1178,14 +1178,14 @@
         [2 2 2 2 2 2 2 0 0 2 -> 1 1 1 1 3 3 3 0 0 1]
         [2 2 0 3 0 2 2 3 3 3 -> 2 2 0 3 0 2 2 3 3 3]
         [2 2 3 3 3 2 2 0 3 0 -> 2 2 3 3 3 2 2 0 3 0]]
-       [::model/move-down]))))
+       [::logic/move-down]))))
 
 (deftest lazyness-bug-repro-test
   ;; class clojure.lang.LazySeq cannot be cast to class clojure.lang.Associative
   ;; Blame and visit commit to view fix
   (testing "laziness bug coverage"
-    (with-redefs [model/entry-column-for-tetrimino (constantly 0)
-                  model/random-tetrimino (constantly [[3 0]
+    (with-redefs [logic/entry-column-for-tetrimino (constantly 0)
+                  logic/random-tetrimino (constantly [[3 0]
                                                       [3 3]
                                                       [3 0]])]
       (check-scenario
@@ -1209,5 +1209,5 @@
         [* * 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]
         [* * 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]
         [0 0 1 1 1 1 1 1 1 1 -> 2 2 0 0 0 0 0 0 0 0]]
-       [::model/move-down
-        ::model/move-down]))))
+       [::logic/move-down
+        ::logic/move-down]))))

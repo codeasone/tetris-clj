@@ -1,4 +1,4 @@
-(ns tetris.model
+(ns tetris.logic
   (:require [clojure.core.matrix :as m]
             [clojure.spec.alpha :as s]
             [com.fulcrologic.guardrails.core :refer [>defn]]))

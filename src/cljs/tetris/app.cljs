@@ -3,9 +3,9 @@
             [reagent.core :as r]
             [reagent.dom.client :as rdom]
             [tetris.keys :as keys]
-            [tetris.model :as model]))
+            [tetris.logic :as logic]))
 
-(defonce game-state (r/atom (model/initial-game-state)))
+(defonce game-state (r/atom (logic/initial-game-state)))
 
 (def game-interval-ms 1000)
 
@@ -24,11 +24,11 @@
         (do
           (.clearTimeout js/window (:timer @game-state))
           (reset! game-state (assoc @game-state :timer nil)))
-        (= key-code keys/space) (reset! game-state (model/handle-events @game-state [::model/drop-current]))
-        (= key-code keys/left) (reset! game-state (model/handle-events @game-state [::model/move-left]))
-        (= key-code keys/up) (reset! game-state (model/handle-events @game-state [::model/rotate-current]))
-        (= key-code keys/right) (reset! game-state (model/handle-events @game-state [::model/move-right]))
-        (= key-code keys/down) (reset! game-state (model/handle-events @game-state [::model/move-down]))
+        (= key-code keys/space) (reset! game-state (logic/handle-events @game-state [::logic/drop-current]))
+        (= key-code keys/left) (reset! game-state (logic/handle-events @game-state [::logic/move-left]))
+        (= key-code keys/up) (reset! game-state (logic/handle-events @game-state [::logic/rotate-current]))
+        (= key-code keys/right) (reset! game-state (logic/handle-events @game-state [::logic/move-right]))
+        (= key-code keys/down) (reset! game-state (logic/handle-events @game-state [::logic/move-down]))
         :else nil))))
 
 (defn classes
@@ -52,13 +52,13 @@
   [:div {:class "w-40 relative"}
    (into
     [:div {:class "flex flex-col"}]
-    (for [row (model/compose-current-tetrimino-into-game-grid @game-state)]
+    (for [row (logic/compose-current-tetrimino-into-game-grid @game-state)]
       (into
        [:div {:class "flex"}]
        (for [cell-value row]
          [grid-cell cell-value]))))
 
-   (when (model/game-over? @game-state)
+   (when (logic/game-over? @game-state)
      (.clearTimeout js/window (:timer @game-state))
      (reset! game-state (assoc @game-state :timer nil))
      [:div {:class (classes "absolute top-1/2 left-1/2 z-10 px-4 py-2"

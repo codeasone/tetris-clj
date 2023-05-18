@@ -37,7 +37,7 @@
 
 (defn grid-cell
   [num-value]
-  (let [common-cell-classes "border h-4 w-4"]
+  (let [common-cell-classes "border h-6 w-6"]
     (case num-value
       0 [:div {:class (classes common-cell-classes "bg-white")}]
       1 [:div {:class (classes common-cell-classes "bg-blue-500")}]
@@ -48,17 +48,20 @@
       6 [:div {:class (classes common-cell-classes "bg-pink-500")}]
       7 [:div {:class (classes common-cell-classes "bg-cyan-500")}])))
 
-(defn grid []
-  [:div {:class "w-40 relative"}
+(defn score [{:keys [game-score]}]
+  [:h1 {:class "font-bold mt-3"} (str "Score: " game-score)])
+
+(defn grid [game-state]
+  [:div {:class "w-60 relative"}
    (into
     [:div {:class "flex flex-col"}]
-    (for [row (drop logic/lead-in-grid-height (logic/compose-current-tetrimino-into-game-grid @game-state))]
+    (for [row (drop logic/lead-in-grid-height (logic/compose-current-tetrimino-into-game-grid game-state))]
       (into
        [:div {:class "flex"}]
        (for [cell-value row]
          [grid-cell cell-value]))))
 
-   (when (logic/game-over? @game-state)
+   (when (logic/game-over? game-state)
      (.clearTimeout js/window (:timer @game-state))
      (reset! game-state (assoc @game-state :timer nil))
      [:div {:class (classes "absolute top-1/2 left-1/2 z-10 px-4 py-2"
@@ -67,7 +70,10 @@
       "Game Over"])])
 
 (defn tetris []
-  [grid])
+  (let [game-state @game-state]
+    [:div {:class "flex flex-col items-center mt-6"}
+     [grid game-state]
+     [score game-state]]))
 
 (defonce root (rdom/create-root (js/document.getElementById "root")))
 

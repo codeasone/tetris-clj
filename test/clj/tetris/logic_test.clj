@@ -63,7 +63,8 @@
      :current-tetrimino (get-in logic/tetrimino-shapes [current-tetrimino-type current-tetrimino-idx])
      :next-tetrimino (logic/random-tetrimino)
      :player-row-col player-row-col
-     :game-status :game-status/playing}))
+     :game-status :game-status/playing
+     :game-score 0}))
 
 (deftest game-state-from-before-grid-test
   (testing "within empty game-grid context"

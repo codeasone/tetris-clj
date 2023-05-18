@@ -164,12 +164,16 @@
         ;; initial-tetrimino [[2 2]
         ;;                    [2 2]]
         initial-position [(entry-row-for-tetrimino initial-tetrimino)
-                          (entry-column-for-tetrimino initial-tetrimino)]]
+                          (entry-column-for-tetrimino initial-tetrimino)]
+        ;; initial-position [0 0]
+        ]
     {:game-grid initial-grid
      :current-tetrimino initial-tetrimino
      :next-tetrimino (random-tetrimino)
      :player-row-col initial-position
-     :game-status :game-status/initialised}))
+     :game-status :game-status/initialised
+     :game-score 0}))
+
 (s/def ::tetrimino-cell-value (s/int-in 0 8))
 (s/def ::grid-of-tetrimino-cells (s/coll-of (s/coll-of ::tetrimino-cell-value)
                                             :count (+ lead-in-grid-height visible-grid-height)))
@@ -186,12 +190,14 @@
 (s/def ::game-status #{:game-status/initialised
                        :game-status/playing
                        :game-status/game-over})
+(s/def ::game-score pos-int?)
 
 (s/def ::tetris (s/keys :req-un [::game-grid
                                  ::current-tetrimino
                                  ::player-row-col]
                         :opt-un [::next-tetrimino
-                                 ::game-status]))
+                                 ::game-status
+                                 ::game-score]))
 
 (comment
   (s/valid? ::tetris (initial-game-state))
@@ -388,12 +394,14 @@
 (defn- complete-rows [{:keys [game-grid]}]
   (keep-indexed (fn [idx row] (when (every? pos? row) idx)) game-grid))
 
-(>defn clear-complete-rows [{:keys [game-grid] :as game-state}]
+(>defn clear-complete-rows [{:keys [game-grid game-score] :as game-state}]
   [::tetris => ::tetris]
   (let [rows-to-remove (set (complete-rows game-state))
         replacement-rows-at-top (repeat (count rows-to-remove) empty-row)
         remaining-rows (remove-rows game-grid rows-to-remove)]
-    (assoc game-state :game-grid (into [] (concat replacement-rows-at-top remaining-rows)))))
+    (assoc game-state
+           :game-grid (into [] (concat replacement-rows-at-top remaining-rows))
+           :game-score (+ game-score (* 100 (count rows-to-remove))))))
 
 (>defn handle-events [game-state-before events]
   [::tetris ::game-events => ::tetris]

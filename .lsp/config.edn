@@ -1,4 +1,4 @@
-{:source-paths #{"dev" "src/cljc" "src/cljs"}
+{:source-paths #{"dev" "src/cljc" "src/cljs" "test/cljc"}
  :project-specs [{:project-path "deps.edn"
-                  :classpath-cmd ["clojure" "-A:dev" "-Spath"]}]
+                  :classpath-cmd ["clojure" "-A:dev:test" "-Spath"]}]
  :java {:download-jdk-source? true}}

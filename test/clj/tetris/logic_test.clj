@@ -1,6 +1,7 @@
 (ns tetris.logic-test
-  (:require #?(:clj [clojure.test :refer :all]
-               :cljs [cljs.test :refer :all :include-macros true])
+  (:require [clojure.test :refer :all]
+            [io.aviso.exception :as exception]
+            [lambdaisland.deep-diff2 :as ddiff]
             [tetris.logic :as logic]))
 
 (defn tetrimino-to-coords [tetrimino]
@@ -389,7 +390,6 @@
                                                       [0 0 0 0 0 0 2 2 * *]])
                         [:game-grid :current-tetrimino :player-row-col])))))
 
-;; Credit: phind.com > debugged by me 🤯
 (defmacro check-scenario
   [before->after events]
   (assert (= (count before->after) (+ tetris.logic/visible-grid-height tetris.logic/lead-in-grid-height)))
@@ -397,41 +397,17 @@
                           (mapv (fn [row] (take-while #(not= % '->) row)) before->after))
         after-grid (mapv #(drop-while (fn [token] (not= token '->)) %) before->after)
         after-grid (mapv #(into [] (rest %)) after-grid)]
-    `(is (= ~after-grid
-            (logic/compose-current-tetrimino-into-game-grid
-             (logic/handle-events (game-state-from-before-grid
-                                   ~before-grid)
-                                  ~events))))))
-
-(comment
-  (macroexpand '(check-scenario
-                 [[0 0 0 0 0 0 0 0 0 0]
-                  [0 0 0 0 0 0 0 0 0 0]
-                  [0 0 0 0 0 0 0 0 0 0]
-                  [0 0 0 0 0 0 0 0 0 0]
-                  [* * * * 0 0 0 0 0 0 -> 0 1 1 1 1 0 0 0 0 0]
-                  [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]
-                  [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]
-                  [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]
-                  [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]
-                  [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]
-                  [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]
-                  [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]
-                  [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]
-                  [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]
-                  [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]
-                  [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]
-                  [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]
-                  [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]
-                  [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]
-                  [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]
-                  [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]
-                  [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]
-                  [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]
-                  [0 0 0 0 0 0 0 0 0 0 -> 0 0 0 0 0 0 0 0 0 0]]
-                 [:key-input/right]))
-  ;;
-  )
+    `(is (try
+           (let [actual# (logic/compose-current-tetrimino-into-game-grid
+                          (logic/handle-events (game-state-from-before-grid ~before-grid) ~events))]
+             (if (= ~after-grid actual#)
+               true
+               (do
+                 (ddiff/pretty-print (ddiff/diff ~after-grid actual#))
+                 false)))
+           (catch Exception e#
+             (exception/write-exception e#)
+             false)))))
 
 (deftest moving-current-tetrimino-down-test
   (testing "within grid"

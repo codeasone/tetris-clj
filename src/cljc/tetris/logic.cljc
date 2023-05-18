@@ -189,9 +189,9 @@
 
 (s/def ::tetris (s/keys :req-un [::game-grid
                                  ::current-tetrimino
-                                 ::player-row-col
-                                 ::game-status]
-                        :opt-un [::next-tetrimino]))
+                                 ::player-row-col]
+                        :opt-un [::next-tetrimino
+                                 ::game-status]))
 
 (comment
   (s/valid? ::tetris (initial-game-state))

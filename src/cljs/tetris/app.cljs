@@ -52,7 +52,7 @@
   [:div {:class "w-40 relative"}
    (into
     [:div {:class "flex flex-col"}]
-    (for [row (logic/compose-current-tetrimino-into-game-grid @game-state)]
+    (for [row (drop logic/lead-in-grid-height (logic/compose-current-tetrimino-into-game-grid @game-state))]
       (into
        [:div {:class "flex"}]
        (for [cell-value row]

@@ -13,13 +13,13 @@
   (let [common-cell-classes "border h-6 w-6"]
     (case num-value
       0 [:div {:class (classes common-cell-classes "bg-white")}]
-      1 [:div {:class (classes common-cell-classes "bg-blue-500")}]
-      2 [:div {:class (classes common-cell-classes "bg-yellow-500")}]
-      3 [:div {:class (classes common-cell-classes "bg-orange-500")}]
-      4 [:div {:class (classes common-cell-classes "bg-red-500")}]
-      5 [:div {:class (classes common-cell-classes "bg-green-500")}]
-      6 [:div {:class (classes common-cell-classes "bg-pink-500")}]
-      7 [:div {:class (classes common-cell-classes "bg-cyan-500")}])))
+      1 [:div {:class (classes common-cell-classes "bg-cyan")}]
+      2 [:div {:class (classes common-cell-classes "bg-yellow")}]
+      3 [:div {:class (classes common-cell-classes "bg-magenta")}]
+      4 [:div {:class (classes common-cell-classes "bg-orange")}]
+      5 [:div {:class (classes common-cell-classes "bg-blue")}]
+      6 [:div {:class (classes common-cell-classes "bg-green")}]
+      7 [:div {:class (classes common-cell-classes "bg-red")}])))
 
 (defn message []
   [:h1 {:class "font-bold"} "Press ENTER key to play"])
@@ -48,7 +48,8 @@
 (defn tetris []
   (let [game-state @events/game-state]
     (set! (.-onkeydown js/document) events/handle-key-event!)
-    [:div {:class "flex flex-col items-center mt-6"}
-     [message]
-     [grid game-state]
-     [score game-state]]))
+    [:div {:class "bg-gray-100 h-screen"}
+     [:div {:class "flex flex-col items-center pt-6"}
+      [message]
+      [grid game-state]
+      [score game-state]]]))

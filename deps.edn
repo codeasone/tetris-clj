@@ -1,8 +1,9 @@
-{:paths ["src/cljs" "src/cljc"]
+{:paths ["src/cljs" "src/cljc" "resources"]
 
  :deps {reagent/reagent {:mvn/version "1.2.0"}
         com.fulcrologic/guardrails {:mvn/version "1.1.11"}
-        net.mikera/core.matrix {:mvn/version "0.63.0"}}
+        net.mikera/core.matrix {:mvn/version "0.63.0"}
+        ch.qos.logback/logback-classic {:mvn/version "1.4.7"}}
 
  :aliases {:dev
            {:extra-paths ["dev"]

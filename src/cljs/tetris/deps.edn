@@ -1,0 +1,2 @@
+{:deps {org.clojars.kjw/slf4j-simple {:mvn/version "1.5.5"}}
+ :aliases {}}

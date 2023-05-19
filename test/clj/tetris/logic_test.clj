@@ -2072,3 +2072,30 @@
           ::logic/move-down
           ::logic/move-down
           ::logic/move-down])))))
+
+(deftest game-play-keys-should-be-noops-unless-game-state-is-playing-test
+  (with-redefs [logic/entry-column-for-tetrimino (constantly 5)
+                logic/entry-row-for-tetrimino (constantly 5)
+                logic/random-tetrimino (constantly [[3 0]
+                                                    [3 3]
+                                                    [3 0]])]
+    (let [{:keys [current-tetrimino player-row-col game-status] :as game-state} (logic/initial-game-state)]
+      (testing "sanity of initialisation"
+        (is (= current-tetrimino [[3 0]
+                                  [3 3]
+                                  [3 0]]))
+        (is (= player-row-col [5 5]))
+        (is (= game-status :game-status/initialised)))
+
+      (testing "all game play events are noops"
+        (doseq [move [::logic/move-left
+                      ::logic/move-right
+                      ::logic/move-down
+                      ::logic/drop
+                      ::logic/rotate]]
+          (is (= (select-keys game-state [:current-tetrimino
+                                          :player-row-col
+                                          :game-status])
+                 (select-keys (logic/handle-events game-state [move]) [:current-tetrimino
+                                                                       :player-row-col
+                                                                       :game-status]))))))))

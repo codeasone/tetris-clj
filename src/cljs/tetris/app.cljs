@@ -48,7 +48,9 @@
             (reset! speed-up-timer (.setInterval
                                     js/window
                                     speed-up-by-20-percent!
-                                    speed-up-interval-ms))))
+                                    speed-up-interval-ms)))
+
+          (reset! game-state (logic/start-playing @game-state)))
 
         (= key-code keys/escape)
         (clear-all-timers!)

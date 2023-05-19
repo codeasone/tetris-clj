@@ -204,6 +204,10 @@
   ;;
   )
 
+(>defn start-playing [game-state]
+  [::tetris => ::tetris]
+  (assoc game-state :game-status :game-status/playing))
+
 (>defn extents-of-current-tetrimino
   [current-tetrimino player-row-col]
   [::current-tetrimino ::position-in-game-grid => (s/coll-of ::column-extents)]
@@ -405,36 +409,38 @@
 
 (>defn handle-events [game-state-before events]
   [::tetris ::game-events => ::tetris]
-  (reduce
-   (fn [acc ev]
-     (let [{:keys [next-tetrimino] :as adjusted-game-state}
-           (case ev
-             ::move-left
-             (move-left acc)
-             ::move-right
-             (move-right acc)
-             ::move-down
-             (move-down acc)
-             ::rotate
-             (rotate-current acc)
-             ::drop
-             (drop-current acc))]
+  (if (= :game-status/playing (:game-status game-state-before))
+    (reduce
+     (fn [acc ev]
+       (let [{:keys [next-tetrimino] :as adjusted-game-state}
+             (case ev
+               ::move-left
+               (move-left acc)
+               ::move-right
+               (move-right acc)
+               ::move-down
+               (move-down acc)
+               ::rotate
+               (rotate-current acc)
+               ::drop
+               (drop-current acc))]
 
-       (if (game-over? adjusted-game-state)
-         (assoc adjusted-game-state :game-status :game-status/game-over)
-         (let [tetrimino-adjacent-to-peaks? (tetrimino-adjacent-to-peaks? adjusted-game-state)
-               adjusted-game-state (cond-> adjusted-game-state
-                                     tetrimino-adjacent-to-peaks?
-                                     (assoc :game-grid (compose-current-tetrimino-into-game-grid adjusted-game-state)))
-               game-grid-contains-complete-rows? (seq (complete-rows adjusted-game-state))
-               start-playing-next-tetrimino? (or game-grid-contains-complete-rows? tetrimino-adjacent-to-peaks?)]
-           (cond-> adjusted-game-state
-             game-grid-contains-complete-rows?
-             clear-complete-rows
+         (if (game-over? adjusted-game-state)
+           (assoc adjusted-game-state :game-status :game-status/game-over)
+           (let [tetrimino-adjacent-to-peaks? (tetrimino-adjacent-to-peaks? adjusted-game-state)
+                 adjusted-game-state (cond-> adjusted-game-state
+                                       tetrimino-adjacent-to-peaks?
+                                       (assoc :game-grid (compose-current-tetrimino-into-game-grid adjusted-game-state)))
+                 game-grid-contains-complete-rows? (seq (complete-rows adjusted-game-state))
+                 start-playing-next-tetrimino? (or game-grid-contains-complete-rows? tetrimino-adjacent-to-peaks?)]
+             (cond-> adjusted-game-state
+               game-grid-contains-complete-rows?
+               clear-complete-rows
 
-             start-playing-next-tetrimino?
-             (assoc :current-tetrimino next-tetrimino
-                    :player-row-col [(- (height-of-tetrimino next-tetrimino))
-                                     (entry-column-for-tetrimino next-tetrimino)]
-                    :next-tetrimino (random-tetrimino)))))))
-   game-state-before events))
+               start-playing-next-tetrimino?
+               (assoc :current-tetrimino next-tetrimino
+                      :player-row-col [(- (height-of-tetrimino next-tetrimino))
+                                       (entry-column-for-tetrimino next-tetrimino)]
+                      :next-tetrimino (random-tetrimino)))))))
+     game-state-before events)
+    game-state-before))

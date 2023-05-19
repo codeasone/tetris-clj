@@ -4,7 +4,7 @@
           {:target :browser
            :dev {:compiler-options
                  {:closure-defines {'goog.DEBUG true}
-                  :external-config {:guardrails {}}}}
+                  :external-config {:guardrails {:throw? false}}}}
            :release {}
            :output-dir "resources/public/js"
            :asset-path "/js"

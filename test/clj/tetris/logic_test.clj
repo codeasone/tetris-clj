@@ -1,6 +1,5 @@
 (ns tetris.logic-test
   (:require [clojure.test :refer :all]
-            [io.aviso.exception :as exception]
             [lambdaisland.deep-diff2 :as ddiff]
             [tetris.logic :as logic]))
 
@@ -398,17 +397,11 @@
                           (mapv (fn [row] (take-while #(not= % '->) row)) before->after))
         after-grid (mapv #(drop-while (fn [token] (not= token '->)) %) before->after)
         after-grid (mapv #(into [] (rest %)) after-grid)]
-    `(is (try
-           (let [actual# (logic/compose-current-tetrimino-into-game-grid
-                          (logic/handle-events (game-state-from-before-grid ~before-grid) ~events))]
-             (if (= ~after-grid actual#)
-               true
-               (do
-                 (ddiff/pretty-print (ddiff/diff ~after-grid actual#))
-                 false)))
-           (catch Exception e#
-             (exception/write-exception e#)
-             false)))))
+    `(is (= ~after-grid (let [actual# (logic/compose-current-tetrimino-into-game-grid
+                                       (logic/handle-events (game-state-from-before-grid ~before-grid) ~events))]
+                          (when (not= ~after-grid actual#)
+                            (ddiff/pretty-print (ddiff/diff ~after-grid actual#)))
+                          actual#)))))
 
 (deftest moving-current-tetrimino-down-test
   (testing "within grid"

@@ -16,19 +16,20 @@
                         (fn [] (keys/dispatch keys/down))
                         initial-step-interval-ms))))
 
-(defn speed-up-by-20-percent! []
+(defn speed-up-by-20-percent! [game-state]
   (when-let [active-step-timer @step-timer]
+    (swap! game-state #(update-in % [:game-level] inc))
     (.clearTimeout js/window active-step-timer)
     (reset! step-timer (.setInterval
                         js/window
                         (fn [] (keys/dispatch keys/down))
                         (swap! step-interval-ms #(Math/floor (* @step-interval-ms speed-up-factor)))))))
 
-(defn establish-speed-up-timer! []
+(defn establish-speed-up-timer! [game-state]
   (when-not @speed-up-timer
     (reset! speed-up-timer (.setInterval
                             js/window
-                            speed-up-by-20-percent!
+                            (partial speed-up-by-20-percent! game-state)
                             speed-up-interval-ms))))
 
 (defn clear-all! []

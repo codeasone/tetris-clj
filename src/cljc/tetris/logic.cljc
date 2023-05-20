@@ -42,6 +42,7 @@
 (s/def ::game-status #{:game-status/initialised
                        :game-status/playing
                        :game-status/game-over})
+(s/def ::game-level pos-int?)
 (s/def ::game-score nat-int?)
 
 (s/def ::game-state (s/keys :req-un [::game-grid
@@ -49,7 +50,8 @@
                                      ::player-row-col]
                             :opt-un [::next-tetrimino
                                      ::game-status
-                                     ::game-score]))
+                                     ::game-score
+                                     ::game-level]))
 
 (def empty-row (vec (repeat visible-grid-width 0)))
 (def empty-game-grid (vec (repeat (+ lead-in-grid-height visible-grid-height) empty-row)))
@@ -214,7 +216,8 @@
      :next-tetrimino (random-tetrimino)
      :player-row-col initial-position
      :game-status :game-status/initialised
-     :game-score 0}))
+     :game-score 0
+     :game-level 1}))
 
 (>defn start-playing
   [game-state]

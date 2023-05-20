@@ -13,7 +13,7 @@
         (= key-code keys/enter)
         (do
           (timers/establish-initial-step-timer!)
-          (timers/establish-speed-up-timer!)
+          (timers/establish-speed-up-timer! game-state)
           (reset! game-state (logic/start-playing @game-state)))
 
         (= key-code keys/escape)

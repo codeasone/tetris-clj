@@ -24,8 +24,10 @@
 (defn message []
   [:h1 {:class "font-bold"} "Press ENTER key to play"])
 
-(defn score [{:keys [game-score]}]
-  [:h1 {:class "font-bold mt-3"} (str "Score: " game-score)])
+(defn statistics [{:keys [game-level game-score]}]
+  [:div {:class "flex"}
+   [:h1 {:class "font-bold mt-3"} (str "Level: " game-level)]
+   [:h1 {:class "font-bold mt-3 ml-6"} (str "Score: " game-score)]])
 
 (defn grid [game-state]
   [:div {:class "w-60 relative mt-3"}
@@ -52,4 +54,4 @@
      [:div {:class "flex flex-col items-center pt-6"}
       [message]
       [grid game-state]
-      [score game-state]]]))
+      [statistics game-state]]]))

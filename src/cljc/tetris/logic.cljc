@@ -41,8 +41,7 @@
                                       #(<= 0 (second %) visible-grid-width)))
 (s/def ::player-row-col ::position-in-game-grid)
 (s/def ::game-status #{:game-status/initialised
-                       :game-status/playing
-                       :game-status/game-over})
+                       :game-status/playing})
 (s/def ::game-level pos-int?)
 (s/def ::game-score nat-int?)
 
@@ -487,13 +486,6 @@
           (assoc :player-row-col new-player-row-col)
           play-next-tetrimino-fn))
     game-state-before))
-
-(>defn check-game-over
-  [game-state]
-  [::game-state => ::game-state]
-  (cond-> game-state
-    game-over?
-    (assoc :game-status :game-status/game-over)))
 
 (def play-next-tetrimino (comp introduce-next-tetrimino clear-complete-rows burn-in-current-tetrimino))
 

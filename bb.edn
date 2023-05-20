@@ -1,0 +1,8 @@
+{:paths ["bb" "src"]
+ :tasks {:requires ([tasks.deps :as deps]
+                    [tasks.lint :as lint]
+                    [tasks.test :as test])
+         deps:tree (deps/tree)
+         lint (lint/all)
+         test:coverage (test/coverage)
+         test:watch (test/watch)}}

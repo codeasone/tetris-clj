@@ -12,3 +12,15 @@ compare and constrast various UI libraries and deployment targets.
 The first consumer of `tetris-clj` is [tetris-reagent](https://github.com/codeasone/tetris-reagent).
 
 It provide a basic web-based front-end and adds a basic multi-player option using web-sockets.
+
+## Development
+
+```sh
+tetris-clj (main) bb tasks
+The following tasks are available:
+
+deps:tree
+lint
+test:coverage
+test:watch
+```

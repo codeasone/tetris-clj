@@ -1,0 +1,4 @@
+;; https://clojure-lsp.io/settings/
+{:source-paths #{"dev" "src" "bb"}
+ :project-specs [{:project-path "deps.edn"
+                  :classpath-cmd ["clojure" "-A:dev:test" "-Spath"]}]}

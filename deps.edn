@@ -4,7 +4,9 @@
         net.mikera/core.matrix {:mvn/version "0.63.0"}}
 
  :aliases {:dev
-           {:jvm-opts ["-Dguardrails.enabled"]}
+           {:extra-paths ["bb"]
+            :extra-deps {clj-kondo/clj-kondo {:mvn/version "2023.05.18"}}
+            :jvm-opts ["-Dguardrails.enabled"]}
 
            :test
            {:extra-paths ["test"]

@@ -477,19 +477,21 @@
            current-tetrimino
            player-row-col] :as game-state-before} play-next-tetrimino-fn]
   [::game-state fn? => ::game-state]
-  (let [[_ col] player-row-col
-        extents-of-current-tetrimino (->> (extents-of-current-tetrimino current-tetrimino [0 col])
-                                          (mapv second))
-        relevant-game-grid-peaks (as-> (peaks game-grid) $
-                                   (subvec $ col (+ col (width-of-tetrimino current-tetrimino)))
-                                   (mapv (fn [extent] (or extent visible-grid-height)) $))
-        new-player-row-col [(apply min (->> (interleave relevant-game-grid-peaks extents-of-current-tetrimino)
-                                            (partition 2)
-                                            (mapv (fn [[peak extent]]
-                                                    (- peak (inc extent)))))) col]]
-    (-> game-state-before
-        (assoc :player-row-col new-player-row-col)
-        play-next-tetrimino-fn)))
+  (if (tetrinimo-can-move-down? game-state-before)
+    (let [[_ col] player-row-col
+          extents-of-current-tetrimino (->> (extents-of-current-tetrimino current-tetrimino [0 col])
+                                            (mapv second))
+          relevant-game-grid-peaks (as-> (peaks game-grid) $
+                                     (subvec $ col (+ col (width-of-tetrimino current-tetrimino)))
+                                     (mapv (fn [extent] (or extent visible-grid-height)) $))
+          new-player-row-col [(apply min (->> (interleave relevant-game-grid-peaks extents-of-current-tetrimino)
+                                              (partition 2)
+                                              (mapv (fn [[peak extent]]
+                                                      (- peak (inc extent)))))) col]]
+      (-> game-state-before
+          (assoc :player-row-col new-player-row-col)
+          play-next-tetrimino-fn))
+    game-state-before))
 
 (>defn check-game-over
   [game-state]

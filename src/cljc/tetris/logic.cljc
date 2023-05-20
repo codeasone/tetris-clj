@@ -1,7 +1,8 @@
 (ns tetris.logic
   (:require [clojure.core.matrix :as m]
             [clojure.spec.alpha :as s]
-            [com.fulcrologic.guardrails.core :refer [>defn]]))
+            [com.fulcrologic.guardrails.core :refer [>defn]]
+            [tetris.utils :as utils]))
 
 (def visible-grid-width 10)
 (def lead-in-grid-height 4)
@@ -297,14 +298,6 @@
                      current-grid))))))
     @mutable-game-grid*))
 
-(defn- select-rows
-  [coll rows]
-  (into [] (keep-indexed #(when (contains? rows %1) %2) coll)))
-
-(defn- remove-rows
-  [coll rows]
-  (into [] (keep-indexed #(when (not (contains? rows %1)) %2) coll)))
-
 (>defn get-cells
   [game-grid row col-start num-cells]
   [::game-grid (s/int-in (- lead-in-grid-height) visible-grid-height)
@@ -384,7 +377,7 @@
   [::game-state => ::game-state]
   (if-let [rows-to-remove (seq (complete-rows game-state-before))]
     (let [replacement-rows-at-top (repeat (count rows-to-remove) empty-row)
-          remaining-rows (remove-rows game-grid (set rows-to-remove))]
+          remaining-rows (utils/remove-from game-grid (set rows-to-remove))]
       (-> game-state-before
           (assoc :game-grid (into [] (concat replacement-rows-at-top remaining-rows))
                  :game-score (+ game-score (* 100 (count rows-to-remove))))
@@ -402,9 +395,10 @@
            player-row-col] :as game-state-before}]
   [::game-state => ::game-state]
   (let [[row col] player-row-col
-        relevant-rows (select-rows game-grid
-                                   (set (range (+ row lead-in-grid-height)
-                                               (+ row lead-in-grid-height (height-of-tetrimino current-tetrimino)))))]
+        relevant-rows (utils/select-from game-grid
+                                         (set (range (+ row lead-in-grid-height)
+                                                     (+ row lead-in-grid-height
+                                                        (height-of-tetrimino current-tetrimino)))))]
     (if (pos? col)
       (if-let [_collision-free?
                (->> (interleave current-tetrimino relevant-rows)
@@ -423,9 +417,10 @@
            player-row-col] :as game-state-before}]
   [::game-state => ::game-state]
   (let [[row col] player-row-col
-        relevant-rows (select-rows game-grid
-                                   (set (range (+ row lead-in-grid-height)
-                                               (+ row lead-in-grid-height (height-of-tetrimino current-tetrimino)))))]
+        relevant-rows (utils/select-from game-grid
+                                         (set (range (+ row lead-in-grid-height)
+                                                     (+ row lead-in-grid-height
+                                                        (height-of-tetrimino current-tetrimino)))))]
     (if (< (+ col (width-of-tetrimino current-tetrimino)) visible-grid-width)
       (if-let [_collision-free?
                (->> (interleave current-tetrimino relevant-rows)

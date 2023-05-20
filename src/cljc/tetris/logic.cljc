@@ -305,6 +305,97 @@
   [coll rows]
   (into [] (keep-indexed #(when (not (contains? rows %1)) %2) coll)))
 
+(>defn get-cells
+  [game-grid row col-start num-cells]
+  [::game-grid (s/int-in (- lead-in-grid-height) visible-grid-height)
+   (s/int-in 0 visible-grid-width) (s/int-in 1 visible-grid-width)
+   => (s/coll-of ::tetrimino-cell-value)]
+  (let [row-cells (nth game-grid (+ lead-in-grid-height row))]
+    (->> row-cells
+         (keep-indexed (fn [idx val] (when (< (dec col-start) idx (+ col-start num-cells)) val))))))
+
+(>defn tetrinimo-can-move-down?
+  [{:keys [game-grid
+           current-tetrimino
+           player-row-col]}]
+  [::game-state => boolean?]
+  (let [[row col] player-row-col]
+    (and
+     (< (+ row (height-of-tetrimino current-tetrimino)) visible-grid-height)
+     (every? (fn [[t-cell g-cell]]
+               (or (zero? t-cell)
+                   (zero? g-cell)))
+             (->> (interleave (last current-tetrimino)
+                              (get-cells game-grid (+ row (height-of-tetrimino current-tetrimino))
+                                         col (width-of-tetrimino current-tetrimino)))
+                  (partition 2))))))
+
+(>defn tetrinimo-cannot-shift-upwards?
+  [{:keys [game-grid
+           current-tetrimino
+           player-row-col]}]
+  [::game-state => boolean?]
+  (let [[row col] player-row-col]
+    (boolean (some #(pos? %) (get-cells game-grid (dec row) col (width-of-tetrimino current-tetrimino))))))
+
+(>defn tetrimino-adjacent-to-peaks?
+  [{:keys [game-grid
+           current-tetrimino
+           player-row-col]}]
+  [::game-state => boolean?]
+  (let [[_ col] player-row-col
+        relevant-tetrimino-extents (->> (extents-of-current-tetrimino current-tetrimino player-row-col)
+                                        (mapv (or second (dec visible-grid-height))))
+        relevant-game-grid-peaks (-> (peaks game-grid)
+                                     (subvec col (+ col (width-of-tetrimino current-tetrimino))))]
+    ;; (tap> {:relevant-tetrimino-extents relevant-tetrimino-extents
+    ;;        :relevant-game-grid-peaks relevant-game-grid-peaks
+    ;;        :status (->> (interleave relevant-tetrimino-extents relevant-game-grid-peaks)
+    ;;                     (partition 2)
+    ;;                     (some (fn [[extent peak]] (= (inc extent) peak)))
+    ;;                     boolean)})
+    (->> (interleave relevant-tetrimino-extents relevant-game-grid-peaks)
+         (partition 2)
+         (some (fn [[extent peak]] (= (inc extent) peak)))
+         boolean)))
+
+(>defn game-over?
+  [{:keys [player-row-col] :as game-state}]
+  [::game-state => boolean?]
+  (let [[row _] player-row-col]
+    (and (<= row 0)
+         (tetrimino-adjacent-to-peaks? game-state))))
+
+(>defn complete-rows
+  [{:keys [game-grid]}]
+  [::game-state => (s/coll-of (s/int-in 0 (+ lead-in-grid-height visible-grid-height)))]
+  (keep-indexed (fn [idx row] (when (every? pos? row) idx)) game-grid))
+
+(>defn introduce-next-tetrimino
+  [{:keys [next-tetrimino] :as game-state-before}]
+  [::game-state => ::game-state]
+  (assoc game-state-before :current-tetrimino next-tetrimino
+         :player-row-col [(- (height-of-tetrimino next-tetrimino))
+                          (entry-column-for-tetrimino next-tetrimino)]
+         :next-tetrimino (random-tetrimino)))
+
+(>defn clear-complete-rows
+  [{:keys [game-grid game-score] :as game-state-before}]
+  [::game-state => ::game-state]
+  (if-let [rows-to-remove (seq (complete-rows game-state-before))]
+    (let [replacement-rows-at-top (repeat (count rows-to-remove) empty-row)
+          remaining-rows (remove-rows game-grid (set rows-to-remove))]
+      (-> game-state-before
+          (assoc :game-grid (into [] (concat replacement-rows-at-top remaining-rows))
+                 :game-score (+ game-score (* 100 (count rows-to-remove))))
+          introduce-next-tetrimino))
+    game-state-before))
+
+(>defn burn-in-current-tetrimino
+  [game-state]
+  [::game-state => ::game-state]
+  (assoc game-state :game-grid (compose-current-tetrimino-into-game-grid game-state)))
+
 (>defn move-left
   [{:keys [game-grid
            current-tetrimino
@@ -347,46 +438,6 @@
         game-state-before)
       game-state-before)))
 
-(>defn get-cells
-  [game-grid row col-start num-cells]
-  [::game-grid (s/int-in 0 visible-grid-height) (s/int-in 0 visible-grid-width) (s/int-in 1 visible-grid-width)
-   => (s/coll-of ::tetrimino-cell-value)]
-  (let [row-cells (nth game-grid (+ lead-in-grid-height row))]
-    (->> row-cells
-         (keep-indexed (fn [idx val] (when (< (dec col-start) idx (+ col-start num-cells)) val))))))
-
-(>defn tetrinimo-can-move-down?
-  [{:keys [game-grid
-           current-tetrimino
-           player-row-col]}]
-  [::game-state => boolean?]
-  (let [[row col] player-row-col]
-    (and
-     (< (+ row (height-of-tetrimino current-tetrimino)) visible-grid-height)
-     (every? (fn [[t-cell g-cell]]
-               (or (zero? t-cell)
-                   (zero? g-cell)))
-             (->> (interleave (last current-tetrimino)
-                              (get-cells game-grid (+ row (height-of-tetrimino current-tetrimino))
-                                         col (width-of-tetrimino current-tetrimino)))
-                  (partition 2))))))
-
-(>defn move-down
-  [{:keys [player-row-col] :as game-state-before}]
-  [::game-state => ::game-state]
-  (let [[row _] player-row-col]
-    (if (tetrinimo-can-move-down? game-state-before)
-      (assoc-in game-state-before [:player-row-col 0] (inc row))
-      game-state-before)))
-
-(>defn tetrinimo-cannot-shift-upwards?
-  [{:keys [game-grid
-           current-tetrimino
-           player-row-col]}]
-  [::game-state => boolean?]
-  (let [[row col] player-row-col]
-    (some #(pos? %) (get-cells game-grid (dec row) col (width-of-tetrimino current-tetrimino)))))
-
 (>defn rotate-current
   [{:keys [current-tetrimino
            player-row-col] :as game-state-before}]
@@ -410,11 +461,22 @@
             (recur (assoc adjusted-game-state :player-row-col [(dec row) col])))
           adjusted-game-state)))))
 
+(>defn move-down
+  [{:keys [player-row-col] :as game-state-before} play-next-tetrimino-fn]
+  [::game-state fn? => ::game-state]
+  (let [[row _] player-row-col]
+    (if (tetrinimo-can-move-down? game-state-before)
+      (let [adjusted-game-state (assoc-in game-state-before [:player-row-col 0] (inc row))]
+        (cond-> adjusted-game-state
+          (tetrimino-adjacent-to-peaks? adjusted-game-state)
+          play-next-tetrimino-fn))
+      game-state-before)))
+
 (>defn drop-current
   [{:keys [game-grid
            current-tetrimino
-           player-row-col] :as game-state-before}]
-  [::game-state => ::game-state]
+           player-row-col] :as game-state-before} play-next-tetrimino-fn]
+  [::game-state fn? => ::game-state]
   (let [[_ col] player-row-col
         extents-of-current-tetrimino (->> (extents-of-current-tetrimino current-tetrimino [0 col])
                                           (mapv second))
@@ -425,81 +487,37 @@
                                             (partition 2)
                                             (mapv (fn [[peak extent]]
                                                     (- peak (inc extent)))))) col]]
+    (-> game-state-before
+        (assoc :player-row-col new-player-row-col)
+        play-next-tetrimino-fn)))
 
-    (assoc game-state-before :player-row-col new-player-row-col)))
-
-(>defn tetrimino-adjacent-to-peaks?
-  [{:keys [game-grid
-           current-tetrimino
-           player-row-col]}]
-  [::game-state => boolean?]
-  (let [[_ col] player-row-col
-        relevant-tetrimino-extents (->> (extents-of-current-tetrimino current-tetrimino player-row-col)
-                                        (mapv (or second (dec visible-grid-height))))
-        relevant-game-grid-peaks (-> (peaks game-grid)
-                                     (subvec col (+ col (width-of-tetrimino current-tetrimino))))]
-    (->> (interleave relevant-tetrimino-extents relevant-game-grid-peaks)
-         (partition 2)
-         (some (fn [[extent peak]] (= (inc extent) peak)))
-         boolean)))
-
-(>defn game-over?
-  [{:keys [player-row-col] :as game-state}]
-  [::game-state => boolean?]
-  (let [[row _] player-row-col]
-    (and (<= row 0)
-         (tetrimino-adjacent-to-peaks? game-state))))
-
-(>defn complete-rows
-  [{:keys [game-grid]}]
-  [::game-state => (s/coll-of (s/int-in 0 visible-grid-height))]
-  (keep-indexed (fn [idx row] (when (every? pos? row) idx)) game-grid))
-
-(>defn clear-complete-rows
-  [{:keys [game-grid game-score] :as game-state-before}]
+(>defn check-game-over
+  [game-state]
   [::game-state => ::game-state]
-  (let [rows-to-remove (set (complete-rows game-state-before))
-        replacement-rows-at-top (repeat (count rows-to-remove) empty-row)
-        remaining-rows (remove-rows game-grid rows-to-remove)]
-    (assoc game-state-before
-           :game-grid (into [] (concat replacement-rows-at-top remaining-rows))
-           :game-score (+ game-score (* 100 (count rows-to-remove))))))
+  (cond-> game-state
+    game-over?
+    (assoc :game-status :game-status/game-over)))
+
+(def play-next-tetrimino (comp introduce-next-tetrimino clear-complete-rows burn-in-current-tetrimino))
 
 (>defn handle-events
-  [game-state-before events]
-  [::game-state ::game-events => ::game-state]
-  (if (= :game-status/playing (:game-status game-state-before))
-    (reduce
-     (fn [acc ev]
-       (let [{:keys [next-tetrimino] :as adjusted-game-state}
-             (case ev
-               ::move-left
-               (move-left acc)
-               ::move-right
-               (move-right acc)
-               ::move-down
-               (move-down acc)
-               ::rotate
-               (rotate-current acc)
-               ::drop
-               (drop-current acc))]
-
-         (if (game-over? adjusted-game-state)
-           (assoc adjusted-game-state :game-status :game-status/game-over)
-           (let [tetrimino-adjacent-to-peaks? (tetrimino-adjacent-to-peaks? adjusted-game-state)
-                 adjusted-game-state (cond-> adjusted-game-state
-                                       tetrimino-adjacent-to-peaks?
-                                       (assoc :game-grid (compose-current-tetrimino-into-game-grid adjusted-game-state)))
-                 game-grid-contains-complete-rows? (seq (complete-rows adjusted-game-state))
-                 start-playing-next-tetrimino? (or game-grid-contains-complete-rows? tetrimino-adjacent-to-peaks?)]
-             (cond-> adjusted-game-state
-               game-grid-contains-complete-rows?
-               clear-complete-rows
-
-               start-playing-next-tetrimino?
-               (assoc :current-tetrimino next-tetrimino
-                      :player-row-col [(- (height-of-tetrimino next-tetrimino))
-                                       (entry-column-for-tetrimino next-tetrimino)]
-                      :next-tetrimino (random-tetrimino)))))))
-     game-state-before events)
-    game-state-before))
+  ([game-state-before events]
+   [::game-state ::game-events => ::game-state] (handle-events game-state-before events play-next-tetrimino))
+  ([game-state-before events play-next-tetrimino-fn]
+   [::game-state ::game-events fn? => ::game-state]
+   (if (= :game-status/playing (:game-status game-state-before))
+     (reduce
+      (fn [acc ev]
+        (case ev
+          ::move-left
+          (move-left acc)
+          ::move-right
+          (move-right acc)
+          ::move-down
+          (move-down acc play-next-tetrimino-fn)
+          ::rotate
+          (rotate-current acc)
+          ::drop
+          (drop-current acc play-next-tetrimino-fn)))
+      game-state-before events)
+     game-state-before)))

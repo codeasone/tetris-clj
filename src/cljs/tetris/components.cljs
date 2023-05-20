@@ -21,8 +21,13 @@
       6 [:div {:class (classes common-cell-classes "bg-green")}]
       7 [:div {:class (classes common-cell-classes "bg-red")}])))
 
-(defn message []
-  [:h1 {:class "font-bold"} "Press ENTER key to play"])
+(defn message [{:keys [game-status] :as game-state}]
+  [:h1 {:class "font-bold"}
+   (if (logic/game-over? game-state)
+     "Reload 🔁 to play another round..."
+     (case game-status
+       :game-status/initialised "Press ENTER key to play"
+       :game-status/playing "TETRIS"))])
 
 (defn statistics [{:keys [game-level game-score]}]
   [:div {:class "flex"}
@@ -49,9 +54,9 @@
 
 (defn tetris []
   (let [game-state @events/game-state]
-    (set! (.-onkeydown js/document) events/handle-key-event!)
+    (events/listen!)
     [:div {:class "bg-gray-100 h-screen"}
      [:div {:class "flex flex-col items-center pt-6"}
-      [message]
+      [message game-state]
       [grid game-state]
       [statistics game-state]]]))

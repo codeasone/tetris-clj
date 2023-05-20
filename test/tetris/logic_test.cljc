@@ -926,17 +926,20 @@
 
 (deftest tetrimino-crosses-baseline?-test
   (testing "within the game-grid"
-    (is (false? (logic/tetrimino-crosses-baseline? {:current-tetrimino [[2 2]
-                                                                        [2 2]]
-                                                    :player-row-col [0 0]}))))
+    (is (false? (logic/tetrimino-crosses-baseline? (assoc (logic/initial-game-state)
+                                                          :current-tetrimino [[2 2]
+                                                                              [2 2]]
+                                                          :player-row-col [0 0])))))
   (testing "on the baseline"
-    (is (false? (logic/tetrimino-crosses-baseline? {:current-tetrimino [[2 2]
-                                                                        [2 2]]
-                                                    :player-row-col [18 0]}))))
+    (is (false? (logic/tetrimino-crosses-baseline? (assoc (logic/initial-game-state)
+                                                          :current-tetrimino [[2 2]
+                                                                              [2 2]]
+                                                          :player-row-col [18 0])))))
   (testing "crossing the baseline"
-    (is (true? (logic/tetrimino-crosses-baseline? {:current-tetrimino [[2 2]
-                                                                       [2 2]]
-                                                   :player-row-col [19 0]})))))
+    (is (true? (logic/tetrimino-crosses-baseline? (assoc (logic/initial-game-state)
+                                                         :current-tetrimino [[2 2]
+                                                                             [2 2]]
+                                                         :player-row-col [19 0]))))))
 
 (deftest tetrimino-collides-with-peaks?-test
   (testing "empty grid"

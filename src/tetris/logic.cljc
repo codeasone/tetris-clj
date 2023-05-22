@@ -236,9 +236,15 @@
                         [(+ col idx) (+ row extent-within-tetrimino)])))))
 
 (>defn peaks
-  [game-grid]
-  [::game-grid => ::peaks]
-  (let [transposed (m/transpose game-grid)]
+  [game-grid player-row]
+  [::game-grid nat-int? => ::peaks]
+  (let [ignore-rows-up-to-player-row
+        (reduce (fn [acc [idx row]]
+                  (conj acc (if (<= idx (+ player-row lead-in-grid-height))
+                              empty-row
+                              row))) [] (->> (interleave (range (count game-grid)) game-grid)
+                                             (partition 2)))
+        transposed (m/transpose ignore-rows-up-to-player-row)]
     (->> transposed
          (mapv #(keep-indexed (fn [idx val] (when (pos? val) idx)) %))
          (mapv #(if (seq %)
@@ -253,7 +259,7 @@
   (let [[row col] player-row-col
         relevant-tetrimino-extents (->> (extents-of-current-tetrimino current-tetrimino player-row-col)
                                         (mapv second))
-        relevant-game-grid-peaks (-> (peaks game-grid)
+        relevant-game-grid-peaks (-> (peaks game-grid row)
                                      (subvec col (+ col (width-of-tetrimino current-tetrimino))))]
     (->> (interleave relevant-tetrimino-extents relevant-game-grid-peaks)
          (partition 2)
@@ -335,10 +341,10 @@
            current-tetrimino
            player-row-col]}]
   [::game-state => boolean?]
-  (let [[_ col] player-row-col
+  (let [[row col] player-row-col
         relevant-tetrimino-extents (->> (extents-of-current-tetrimino current-tetrimino player-row-col)
                                         (mapv (or second (dec visible-grid-height))))
-        relevant-game-grid-peaks (-> (peaks game-grid)
+        relevant-game-grid-peaks (-> (peaks game-grid row)
                                      (subvec col (+ col (width-of-tetrimino current-tetrimino))))]
     ;; (tap> {:relevant-tetrimino-extents relevant-tetrimino-extents
     ;;        :relevant-game-grid-peaks relevant-game-grid-peaks
@@ -472,10 +478,10 @@
            player-row-col] :as game-state-before} play-next-tetrimino-fn]
   [::game-state fn? => ::game-state]
   (if (tetrinimo-can-move-down? game-state-before)
-    (let [[_ col] player-row-col
+    (let [[row col] player-row-col
           extents-of-current-tetrimino (->> (extents-of-current-tetrimino current-tetrimino [0 col])
                                             (mapv second))
-          relevant-game-grid-peaks (as-> (peaks game-grid) $
+          relevant-game-grid-peaks (as-> (peaks game-grid row) $
                                      (subvec $ col (+ col (width-of-tetrimino current-tetrimino)))
                                      (mapv (fn [extent] (or extent visible-grid-height)) $))
           new-player-row-col [(apply min (->> (interleave relevant-game-grid-peaks extents-of-current-tetrimino)

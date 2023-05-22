@@ -10,5 +10,6 @@
 (defn watch []
   (-> (process ["clj" "-M:test" "--focus-meta" ":focus" "--watch"]
                {:shutdown destroy
+                :in :inherit
                 :out :inherit})
       check))

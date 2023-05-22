@@ -470,7 +470,7 @@
         (cond-> adjusted-game-state
           (tetrimino-adjacent-to-peaks? adjusted-game-state)
           play-next-tetrimino-fn))
-      game-state-before)))
+      (play-next-tetrimino-fn game-state-before))))
 
 (>defn drop-current
   [{:keys [game-grid

@@ -2,13 +2,13 @@
   (:require [babashka.process :refer [check destroy process destroy]]))
 
 (defn coverage []
-  (-> (process ["clj" "-M:test"]
+  (-> (process ["clojure" "-M:test"]
                {:shutdown destroy
                 :out :inherit})
       check))
 
 (defn watch []
-  (-> (process ["clj" "-M:test" "--focus-meta" ":focus" "--watch"]
+  (-> (process ["clojure" "-M:test" "--focus-meta" ":focus" "--watch"]
                {:shutdown destroy
                 :in :inherit
                 :out :inherit})

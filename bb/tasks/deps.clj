@@ -2,7 +2,7 @@
   (:require [babashka.process :refer [check destroy process]]))
 
 (defn tree []
-  (-> (process ["clj" "-X:deps" "tree" ":aliases" "[:test]"]
+  (-> (process ["clojure" "-X:deps" "tree" ":aliases" "[:test]"]
                {:shutdown destroy
                 :out :inherit
                 :err :inherit})

@@ -16,7 +16,8 @@
                 :lib lib
                 :version version
                 :basis basis
-                :src-dirs ["src"]})
+                :src-dirs ["src"]
+                :scm {:url "https://github.com/codeasone/tetris-clj"}})
   (b/copy-dir {:src-dirs ["src" "resources"]
                :target-dir class-dir})
   (b/jar {:class-dir class-dir

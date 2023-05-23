@@ -13,4 +13,8 @@
             :extra-deps {lambdaisland/kaocha {:mvn/version "1.83.1314"}
                          lambdaisland/kaocha-cloverage {:mvn/version "1.1.89"}
                          lambdaisland/deep-diff2 {:mvn/version "2.8.190"}}
-            :main-opts ["-m" "kaocha.runner"]}}}
+            :main-opts ["-m" "kaocha.runner"]}
+
+           :build {:deps {io.github.clojure/tools.build {:git/tag "v0.9.4" :git/sha "76b78fe"}
+                          slipset/deps-deploy {:mvn/version "RELEASE"}}
+                   :ns-default build}}}

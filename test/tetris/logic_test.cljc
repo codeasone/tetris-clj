@@ -2403,3 +2403,71 @@
                            ::logic/move-left
                            ::logic/move-down])]
       (is (= [-3 0] (:player-row-col new-game-state))))))
+
+(deftest updating-game-level-from-score-after-clearing-complete-rows-test
+  (testing "when game will not shift up a level after calculating new score"
+    (is (= {:game-level 1}
+           (select-keys (tetris.logic/clear-complete-rows {:current-tetrimino [[2 2] [2 2]],
+                                                           :game-grid [[0 0 0 0 0 0 0 0 0 0]
+                                                                       [0 0 0 0 0 0 0 0 0 0]
+                                                                       [0 0 0 0 0 0 0 0 0 0]
+                                                                       [0 0 0 0 0 0 0 0 0 0]
+                                                                       [0 0 0 0 0 0 0 0 0 0]
+                                                                       [0 0 0 0 0 0 0 0 0 0]
+                                                                       [0 0 0 0 0 0 0 0 0 0]
+                                                                       [0 0 0 0 0 0 0 0 0 0]
+                                                                       [0 0 0 0 0 0 0 0 0 0]
+                                                                       [0 0 0 0 0 0 0 0 0 0]
+                                                                       [0 0 0 0 0 0 0 0 0 0]
+                                                                       [0 0 0 0 0 0 0 0 0 0]
+                                                                       [0 0 0 0 0 0 0 0 0 0]
+                                                                       [0 0 0 0 0 0 0 0 0 0]
+                                                                       [0 0 0 0 0 0 0 0 0 0]
+                                                                       [0 0 0 0 0 0 0 0 0 0]
+                                                                       [0 0 0 0 0 0 0 0 0 0]
+                                                                       [0 0 0 0 0 0 0 0 0 0]
+                                                                       [0 0 0 0 0 0 0 0 0 0]
+                                                                       [0 0 0 0 0 0 0 0 0 0]
+                                                                       [0 0 0 0 0 0 0 0 0 0]
+                                                                       [0 0 0 0 0 0 0 0 0 0]
+                                                                       [2 2 2 2 2 2 2 2 2 2]
+                                                                       [2 2 2 2 2 2 2 2 2 2]]
+                                                           :game-level 1
+                                                           :game-score (- logic/difficulty-increment-in-pts 300)
+                                                           :game-status :game-status/playing
+                                                           :next-tetrimino [[1] [1] [1] [1]]
+                                                           :player-row-col [18 0]})
+                        [:game-level]))))
+  (testing "when game will shift up a level  after calculating new score"
+    (is (= {:game-level 2}
+           (select-keys (tetris.logic/clear-complete-rows {:current-tetrimino [[2 2] [2 2]],
+                                                           :game-grid [[0 0 0 0 0 0 0 0 0 0]
+                                                                       [0 0 0 0 0 0 0 0 0 0]
+                                                                       [0 0 0 0 0 0 0 0 0 0]
+                                                                       [0 0 0 0 0 0 0 0 0 0]
+                                                                       [0 0 0 0 0 0 0 0 0 0]
+                                                                       [0 0 0 0 0 0 0 0 0 0]
+                                                                       [0 0 0 0 0 0 0 0 0 0]
+                                                                       [0 0 0 0 0 0 0 0 0 0]
+                                                                       [0 0 0 0 0 0 0 0 0 0]
+                                                                       [0 0 0 0 0 0 0 0 0 0]
+                                                                       [0 0 0 0 0 0 0 0 0 0]
+                                                                       [0 0 0 0 0 0 0 0 0 0]
+                                                                       [0 0 0 0 0 0 0 0 0 0]
+                                                                       [0 0 0 0 0 0 0 0 0 0]
+                                                                       [0 0 0 0 0 0 0 0 0 0]
+                                                                       [0 0 0 0 0 0 0 0 0 0]
+                                                                       [0 0 0 0 0 0 0 0 0 0]
+                                                                       [0 0 0 0 0 0 0 0 0 0]
+                                                                       [0 0 0 0 0 0 0 0 0 0]
+                                                                       [0 0 0 0 0 0 0 0 0 0]
+                                                                       [0 0 0 0 0 0 0 0 0 0]
+                                                                       [0 0 0 0 0 0 0 0 0 0]
+                                                                       [2 2 2 2 2 2 2 2 2 2]
+                                                                       [2 2 2 2 2 2 2 2 2 2]]
+                                                           :game-level 1
+                                                           :game-score (- logic/difficulty-increment-in-pts 100)
+                                                           :game-status :game-status/playing
+                                                           :next-tetrimino [[1] [1] [1] [1]]
+                                                           :player-row-col [18 0]})
+                        [:game-level])))))

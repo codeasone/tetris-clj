@@ -17,6 +17,7 @@
                       :tetrimino/Z])
 
 (s/def ::tetrimino-type (set tetrimino-types))
+
 (s/def ::game-event #{::move-left
                       ::move-right
                       ::move-down
@@ -24,7 +25,6 @@
                       ::drop})
 
 (s/def ::game-events (s/coll-of ::game-event))
-
 (s/def ::tetrimino-cell-value (s/int-in 0 8))
 (s/def ::tetrimino (s/coll-of (s/coll-of ::tetrimino-cell-value)))
 (s/def ::grid-of-tetrimino-cells (s/coll-of (s/coll-of ::tetrimino-cell-value)
@@ -42,8 +42,8 @@
 (s/def ::player-row-col ::position-in-game-grid)
 (s/def ::game-status #{:game-status/initialised
                        :game-status/playing})
-(s/def ::game-level pos-int?)
 (s/def ::game-score nat-int?)
+(s/def ::game-level pos-int?)
 
 (s/def ::game-state (s/keys :req-un [::game-grid
                                      ::current-tetrimino
@@ -52,9 +52,7 @@
                                      ::game-status
                                      ::game-score
                                      ::game-level]))
-
 (def empty-row (vec (repeat visible-grid-width 0)))
-(def empty-game-grid (vec (repeat (+ lead-in-grid-height visible-grid-height) empty-row)))
 ;;    [[[0 0 0 0 0 0 0 0 0 0]
 ;;      [0 0 0 0 0 0 0 0 0 0]
 ;;      [0 0 0 0 0 0 0 0 0 0]
@@ -79,6 +77,8 @@
 ;;      [0 0 0 0 0 0 0 0 0 0]
 ;;      [0 0 0 0 0 0 0 0 0 0]
 ;;      [0 0 0 0 0 0 0 0 0 0]]]
+
+(def empty-game-grid (vec (repeat (+ lead-in-grid-height visible-grid-height) empty-row)))
 
 (def tetrimino-shapes {:tetrimino/I [[[1, 1, 1, 1]]
                                      [[1]
@@ -268,6 +268,7 @@
                                                          (>= tetrimino-extent grid-peak)))))
          boolean)))
 
+;; This compose helper is not responsible for any validation
 (>defn tetrimino-crosses-baseline?
   [{:keys [current-tetrimino
            player-row-col]}]
@@ -276,7 +277,6 @@
     (boolean (some (fn [[_ row-extent]]
                      (>= row-extent visible-grid-height)) extents))))
 
-;; This compose helper is not responsible for any validation
 (>defn compose-current-tetrimino-into-game-grid
   [{:keys [game-grid current-tetrimino player-row-col]}]
   [::game-state => ::game-grid]
@@ -377,15 +377,23 @@
                           (entry-column-for-tetrimino next-tetrimino)]
          :next-tetrimino (random-tetrimino)))
 
+(def difficulty-increment-in-pts 1000)
+
+(>defn level-from-score [score]
+  [pos-int? => pos-int?]
+  (inc (quot score difficulty-increment-in-pts)))
+
 (>defn clear-complete-rows
   [{:keys [game-grid game-score] :as game-state-before}]
   [::game-state => ::game-state]
   (if-let [rows-to-remove (seq (complete-rows game-state-before))]
     (let [replacement-rows-at-top (repeat (count rows-to-remove) empty-row)
-          remaining-rows (utils/remove-from game-grid (set rows-to-remove))]
+          remaining-rows (utils/remove-from game-grid (set rows-to-remove))
+          new-score (+ game-score (* 100 (count rows-to-remove)))]
       (-> game-state-before
           (assoc :game-grid (into [] (concat replacement-rows-at-top remaining-rows))
-                 :game-score (+ game-score (* 100 (count rows-to-remove))))
+                 :game-score new-score
+                 :game-level (level-from-score new-score))
           introduce-next-tetrimino))
     game-state-before))
 

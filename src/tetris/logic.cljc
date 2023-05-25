@@ -1,6 +1,5 @@
 (ns tetris.logic
-  (:require [clojure.core.matrix :as m]
-            [clojure.spec.alpha :as s]
+  (:require [clojure.spec.alpha :as s]
             [com.fulcrologic.guardrails.core :refer [>defn]]
             [tetris.utils :as utils]))
 
@@ -224,12 +223,16 @@
   [::game-state => ::game-state]
   (assoc game-state :game-status :game-status/playing))
 
+(>defn transpose [matrix]
+  [::tetrimino => ::tetrimino]
+  (apply mapv vector matrix))
+
 (>defn extents-of-current-tetrimino
   [current-tetrimino player-row-col]
   [::current-tetrimino ::position-in-game-grid => (s/coll-of ::column-extents)]
   (let [[row col] player-row-col]
     (->> current-tetrimino
-         m/transpose
+         transpose
          (mapv #(keep-indexed (fn [idx val] (when (pos? val) idx)) %))
          (mapv #(apply max %))
          (map-indexed (fn [idx extent-within-tetrimino]
@@ -244,7 +247,7 @@
                               empty-row
                               row))) [] (->> (interleave (range (count game-grid)) game-grid)
                                              (partition 2)))
-        transposed (m/transpose ignore-rows-up-to-player-row)]
+        transposed (transpose ignore-rows-up-to-player-row)]
     (->> transposed
          (mapv #(keep-indexed (fn [idx val] (when (pos? val) idx)) %))
          (mapv #(if (seq %)

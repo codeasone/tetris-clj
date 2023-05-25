@@ -52,30 +52,6 @@
                                      ::game-score
                                      ::game-level]))
 (def empty-row (vec (repeat visible-grid-width 0)))
-;;    [[[0 0 0 0 0 0 0 0 0 0]
-;;      [0 0 0 0 0 0 0 0 0 0]
-;;      [0 0 0 0 0 0 0 0 0 0]
-;;      [0 0 0 0 0 0 0 0 0 0]
-;;      [0 0 0 0 0 0 0 0 0 0]
-;;      [0 0 0 0 0 0 0 0 0 0]
-;;      [0 0 0 0 0 0 0 0 0 0]
-;;      [0 0 0 0 0 0 0 0 0 0]
-;;      [0 0 0 0 0 0 0 0 0 0]
-;;      [0 0 0 0 0 0 0 0 0 0]
-;;      [0 0 0 0 0 0 0 0 0 0]
-;;      [0 0 0 0 0 0 0 0 0 0]
-;;      [0 0 0 0 0 0 0 0 0 0]
-;;      [0 0 0 0 0 0 0 0 0 0]
-;;      [0 0 0 0 0 0 0 0 0 0]
-;;      [0 0 0 0 0 0 0 0 0 0]
-;;      [0 0 0 0 0 0 0 0 0 0]
-;;      [0 0 0 0 0 0 0 0 0 0]
-;;      [0 0 0 0 0 0 0 0 0 0]
-;;      [0 0 0 0 0 0 0 0 0 0]
-;;      [0 0 0 0 0 0 0 0 0 0]
-;;      [0 0 0 0 0 0 0 0 0 0]
-;;      [0 0 0 0 0 0 0 0 0 0]
-;;      [0 0 0 0 0 0 0 0 0 0]]]
 
 (def empty-game-grid (vec (repeat (+ lead-in-grid-height visible-grid-height) empty-row)))
 
@@ -271,7 +247,6 @@
                                                          (>= tetrimino-extent grid-peak)))))
          boolean)))
 
-;; This compose helper is not responsible for any validation
 (>defn tetrimino-crosses-baseline?
   [{:keys [current-tetrimino
            player-row-col]}]
@@ -349,12 +324,6 @@
                                         (mapv (or second (dec visible-grid-height))))
         relevant-game-grid-peaks (-> (peaks game-grid row)
                                      (subvec col (+ col (width-of-tetrimino current-tetrimino))))]
-    ;; (tap> {:relevant-tetrimino-extents relevant-tetrimino-extents
-    ;;        :relevant-game-grid-peaks relevant-game-grid-peaks
-    ;;        :status (->> (interleave relevant-tetrimino-extents relevant-game-grid-peaks)
-    ;;                     (partition 2)
-    ;;                     (some (fn [[extent peak]] (= (inc extent) peak)))
-    ;;                     boolean)})
     (->> (interleave relevant-tetrimino-extents relevant-game-grid-peaks)
          (partition 2)
          (some (fn [[extent peak]] (= (inc extent) peak)))
@@ -457,7 +426,6 @@
         rotated (rotate current-tetrimino)
         rotated-width (width-of-tetrimino rotated)
         new-game-state (cond-> (assoc game-state-before :current-tetrimino rotated)
-                         ;; Boundary handling on rhs of game-grid
                          (> (+ col rotated-width) visible-grid-width)
                          (assoc :player-row-col [row (- visible-grid-width rotated-width)]))
         no-space-to-rotate? (and (tetrinimo-cannot-shift-upwards? new-game-state)

@@ -8,9 +8,9 @@ Tetris game logic.
 
 The two motivations for creating this library were:
 
-1. Evaluating `fulcro/guardrails` whilst developing something non-trivial (all the `tetris.logic` functions use `>defn`)
+1. Evaluating `fulcro/guardrails` whilst developing something non-trivial
 
-2. Creating a unit-tested and repurposable `tetris.logic` engine that I can use when building fully-fledged games using various Clojure-based UI frameworks and deployment targets (e.g. web, desktop, mobile)
+2. Creating a unit-tested and repurposable `tetris.logic` engine that can be used to build fully-fleshed out games using various Clojure-based UI frameworks and deployment targets (e.g. web, desktop, mobile)
 
 ## API
 

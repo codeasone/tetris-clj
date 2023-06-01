@@ -35,6 +35,7 @@
 (s/def ::column-extents (s/and vector? #(= 2 (count %))
                                (s/every integer?)
                                #(<= 0 (first %) visible-grid-width)))
+(s/def ::player-row (s/and integer? #(<= -4 % visible-grid-height)))
 (s/def ::position-in-game-grid (s/and vector? #(= 2 (count %))
                                       #(<= -4 (first %) visible-grid-height)
                                       #(<= 0 (second %) visible-grid-width)))
@@ -216,7 +217,7 @@
 
 (>defn peaks
   [game-grid player-row]
-  [::game-grid nat-int? => ::peaks]
+  [::game-grid ::player-row => ::peaks]
   (let [ignore-rows-up-to-player-row
         (reduce (fn [acc [idx row]]
                   (conj acc (if (<= idx (+ player-row lead-in-grid-height))
